@@ -29,15 +29,16 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 4. Never rewrite an earlier day's file except to fix a factual error; add a dated correction instead.
 5. Decisions with lasting effect also go in `docs/DECISIONS.md` (short ADR entries).
 
-## Current state: v0.1.0 built, NOT released (2026-10-29, week 1 day 1)
+## Current state: v0.1.0 released (2026-10-29, week 1 day 1)
 
 **Done and verified on this Mac (JDK 17, Android 15 emulator `mn35`):**
 - `:core` parser/merchants/categoriser/insights/sample data, 28 JVM tests green: 37 hand-written parser fixtures plus 100 adversarial fixtures written by Codex (ratchet `knownFailures` is empty; the first run failed 36, all fixed).
 - `:app` capture (SmsReceiver, NotificationCaptureService, CatchUp), SQLite repo with de-dup, and the full Signal Noir UI (intro, Arm-it, Pulse, Ledger, Insights, grouped Needs-a-look, payment sheet, System).
 - End-to-end: a real multi-part SMS PDU through the production receiver is stored, a UPI-app notification for the same payment is de-duplicated (SMS wins), an OTP is dropped unread. `scripts/android-smoke.sh` passes.
-- Release build: 1.32 MB, R8-minified, signed with the owner's private key (`~/.credu1ar/`, outside the repo), runs identically to debug. `lintDebug` has 0 errors.
+- Local release build: 1.32 MB, R8-minified, signed with the owner's private key (`~/.credu1ar/`, outside the repo), runs identically to debug. `lintDebug` has 0 errors.
+- **Published [v0.1.0](https://github.com/Chiragjjjks/Credu1ar/releases/tag/v0.1.0)** from `2029153`: [main CI](https://github.com/Chiragjjjks/Credu1ar/actions/runs/40916416903) passed tests, lint, builds and x86_64 emulator smoke; [tag workflow](https://github.com/Chiragjjjks/Credu1ar/actions/runs/40917498126) published that exact APK + `SHA256SUMS.txt`. Downloaded the published APK, checked SHA-256 and byte-for-byte equality with the CI artifact. CI APK: 1,403,876 bytes, version code 10004, debug-key signed (CI signing secrets are absent). Installed this exact APK on `mn35`, loaded sample data and visually checked Pulse; no crash. Signing/update caveat is in the release notes.
 
-**Not verified:** a real phone (restricted-settings flow, Google Messages RCS, OEM battery kill, real bank formats) → `docs/PHONE-TEST.md`. CI workflow is written but has not run yet. Idle battery/RAM/CPU per SMS are unmeasured.
+**Not verified:** a real phone (restricted-settings flow, Google Messages RCS, OEM battery kill, real bank formats) → `docs/PHONE-TEST.md`. Idle battery/RAM/CPU per SMS are unmeasured.
 
 **Known sharp edges:** the emulator console `sms send` does not deliver on this image, so use `scripts/inject.sh` (debug build only). `adb shell` re-parses quotes: always go through `scripts/inject.sh`. Launch the emulator detached (`start_new_session`) or the harness kills it when the command returns.
 
@@ -47,11 +48,10 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 
 ## Next, in order
 
-1. Merge/integrate the Codex results (site, adversarial fixtures), fix the top parser failures, add them to the ratchet.
-2. Push `main` and watch the first CI run (it exercises the emulator smoke test on x86_64 for the first time).
-3. Owner: run `docs/PHONE-TEST.md`, paste back the Diagnostics report; add real formats as fixtures.
-4. Owner decides: set CI signing secrets, approve the v0.1.0 tag, enable GitHub Pages for `site/`.
-5. v0.2.0: rules editor, merchant pages, budgets, recurring calendar, grain overlay and haptics from `docs/DESIGN.md`.
+1. Owner: install v0.1.0, run `docs/PHONE-TEST.md`, paste back the Diagnostics report; add real formats as fixtures before changing parser rules.
+2. Owner: set the four CI signing secrets (`docs/ARCHITECTURE.md`) before the next release. The published v0.1.0 uses a temporary debug key; moving to the private key requires uninstall/reinstall (export first; re-import SMS afterward).
+3. Owner decides whether to enable GitHub Pages for the completed `site/`; deployment is not approved yet.
+4. v0.2.0: rules editor, merchant pages, budgets, recurring calendar, grain overlay and haptics from `docs/DESIGN.md`. Later releases need fresh approval.
 
 ## Rules (hard)
 

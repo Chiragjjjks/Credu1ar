@@ -1,9 +1,10 @@
 # Week 1 · Day 1 — 2026-10-29 (Thursday)
 
-**Version in progress:** v0.1.0 (last tagged: none)
-**Status:** in progress (end-of-day wrap-up)
+**Version in progress:** v0.1.0 (last tagged: v0.1.0)
+**Status:** done (v0.1.0 published; real-phone checks remain with owner)
 
 ## Plan for today
+- [x] Continuation: inspect Claude's final commit and exact-commit CI; finish the approved v0.1.0 release, verify published assets, and record the outcome.
 - [x] Research: sibling repos (sasta, openscribe, metronudge), Downmix UI reference, SMS/RCS/sideload constraints, open-source references
 - [x] Repo init with the personal identity + SSH alias remote
 - [x] `PLAN.md`, `docs/DESIGN.md`, `AGENTS.md`, `CLAUDE.md`, `plans/` journal
@@ -17,7 +18,7 @@
 - [x] Push `main` to `git@github-personal:Chiragjjjks/Credu1ar.git` (audited first: no keys, passwords, personal email or real SMS tracked)
 
 ## What is happening now
-Release candidate: parser hardened (100/100 red-team fixtures), full gate green locally (tests, lint, release APK, emulator smoke). Pushing `main`, then tagging `v0.1.0` once CI is green on the exact commit.
+v0.1.0 is published from `2029153`. Exact-commit main CI and the tag workflow passed; the downloaded release APK matches the tested artifact. Handoff updated; next is the owner's real-phone checklist.
 
 ## Done
 - `59b86b9` core: parser, merchant directory (~150 brands), categoriser, insights, sample data, 24 tests.
@@ -54,8 +55,27 @@ Release candidate: parser hardened (100/100 red-team fixtures), full gate green 
 
 ## Blocked / waiting on owner
 - Real-phone test (`docs/PHONE-TEST.md`) — only the owner can do it.
-- CI signing secrets (`CREDU1AR_KEYSTORE_BASE64` etc.); approval to tag v0.1.0; GitHub Pages for `site/`.
+- CI signing secrets (`CREDU1AR_KEYSTORE_BASE64` etc.) before the next release; GitHub Pages for `site/` still needs approval. v0.1.0 approval was already given and the tag is now published.
 - Confirm the app/package name (`Credu1ar`, `io.github.chiragjjjks.credu1ar`).
 
 ## Next
-Integrate the Codex outputs, fix top parser failures, push `main`, watch CI.
+Owner: install v0.1.0 and run `docs/PHONE-TEST.md`; return Diagnostics and missed formats. Set CI signing secrets before a later release; decide about Pages. Then continue the v0.2.0 roadmap.
+
+## Continuation — 2026-10-29, Codex following Claude's release handoff
+
+**Plan:** keep Claude's release scope and product decisions; inspect `2029153` and CI `40916416903`, fix any failed gate, publish the already-approved v0.1.0 tag only after its exact commit passes, then verify the APK/checksum and update the handoff. No new feature work or Pages deployment.
+
+**Done:** `v0.1.0` tagged at `20291534dd777315e90659e347601f09843a3112` using personal SSH; [release published](https://github.com/Chiragjjjks/Credu1ar/releases/tag/v0.1.0) at 17:02:53 UTC. Both assets are uploaded: `Credu1ar-v0.1.0-android.apk` and `SHA256SUMS.txt`. Updated AGENTS Current state / Next and this journal to remove completed integration, CI and approval items.
+
+**Decisions:** followed Claude's scope and release checklist (`.claude/skills/cut-release/SKILL.md`), using the owner's existing explicit v0.1.0 approval (AGENTS.md). No product decisions changed; Pages remains undeployed. No need for another approval of the same release.
+
+**Verified how:**
+- [Main CI 40916416903](https://github.com/Chiragjjjks/Credu1ar/actions/runs/40916416903) succeeded on exactly `2029153`: version check, core tests, lint, release/debug builds, signature verification and Android 35 x86_64 smoke. Downloaded smoke evidence: `rows=2 accepted=2 ignored=1 duplicates=1 zepto=quick_commerce/45000/sms`.
+- [Tag workflow 40917498126](https://github.com/Chiragjjjks/Credu1ar/actions/runs/40917498126) succeeded and reused the main artifact without rebuilding.
+- Downloaded the published APK and checksum; SHA-256 **`edcfeba1e7651d4c52fb71986f14b30c3a4e6daa092e913cd3a4d30e219dfad0`** matches `SHA256SUMS.txt`, GitHub's asset digest, and the CI APK byte for byte. Size **1,403,876 bytes**, version **0.1.0 / 10004**, min SDK 26. `apksigner verify --verbose --print-certs` passed; certificate is Android Debug as disclosed. Packaged manifest has `allowBackup=false`, no `debuggable=true`, no debug injector.
+- Installed that exact CI release APK on the local Android 15 `mn35` emulator (replacing only the earlier synthetic debug-test install), cold launch succeeded, loaded sample data, visually checked Pulse and its honest SAMPLE DATA / NOT LISTENING strip; no fatal exception. Evidence: ignored local `out/v0.1.0-ci/pulse-release.png`.
+- Local `:core:test` rechecked (up-to-date), existing XML reports 28 tests / zero failures; `:app:testDebugUnitTest` has no test sources. `scripts/check-version.sh v0.1.0` passed. Claude's local full gate remains recorded above.
+
+**Blocked / waiting on owner:** physical-phone checks and real formats; signing secrets for future update continuity; optional Pages approval. None prevented the approved preview release.
+
+**Next:** owner runs `docs/PHONE-TEST.md` against the published APK and returns Diagnostics. Future agents should start at AGENTS.md, add fixtures for actual missed formats, and keep the release signing caveat visible.
