@@ -4,6 +4,16 @@ Know exactly where your money went. Credu1ar reads the payment SMS and notificat
 
 Android only (sideloaded APK, Android 8+). Personal project, not affiliated with any bank or payment app.
 
+<p align="center">
+  <img src="docs/screens/1-pulse.png" width="19%" alt="Pulse: spend, pace gauge" />
+  <img src="docs/screens/2-ring.png" width="19%" alt="Where it went: category ring and groceries split" />
+  <img src="docs/screens/3-ledger.png" width="19%" alt="Ledger" />
+  <img src="docs/screens/4-insights.png" width="19%" alt="Insights: leaks and movers" />
+  <img src="docs/screens/5-review.png" width="19%" alt="Needs a look: one tap files every payment to a payee" />
+</p>
+
+<sub>Screens use fictional sample data from the emulator (Android 15). Pulse · Where it went · Ledger · Insights · Needs a look.</sub>
+
 - **Why and roadmap:** [`PLAN.md`](PLAN.md)
 - **Design language:** [`docs/DESIGN.md`](docs/DESIGN.md)
 - **Day-by-day log:** [`plans/`](plans/README.md)
