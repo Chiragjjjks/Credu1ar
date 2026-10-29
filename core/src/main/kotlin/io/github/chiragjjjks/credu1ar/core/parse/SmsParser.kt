@@ -43,8 +43,17 @@ object SmsParser {
     private val FAILED = Regex("""(?i)\b(?:failed|failure|declined|unsuccessful|not successful|could not be|unable to|insufficient)\b|\bnot\s+(?:been\s+)?(?:debited|credited|processed)\b""")
     private val REFUND_POSTED = Regex("""(?i)\brefund(?:ed)?\b.{0,40}\bcredited\b|\bcredited\b.{0,60}\brefund""")
     private val REQUESTED = Regex("""(?i)\b(?:has\s+)?requested\s+(?:money|rs|₹|inr)|\bcollect request\b|\bpayment request\b|\brequesting\b|\bplease pay\b|\bpay now\b""")
-    private val UPCOMING = Regex("""(?i)\bwill be\s+(?:auto[- ]?)?(?:debited|deducted|charged)\b|\bis due\b|\bdue (?:on|by|date)\b|\b(?:minimum|total)\s+(?:amount\s+)?due\b|\bstatement\b|\bbill (?:is )?generated\b|\breminder\b|\bupcoming\b|\bscheduled\b|\bto be debited\b""")
-    private val PROMO = Regex("""(?i)\b(?:pre-?approved|apply now|loan up to|limited period|congratulations|you(?:'ve| have) won|use code|coupon|exclusive offer)\b""")
+    private val UPCOMING = Regex("""(?i)\bwill\s+(?:only\s+)?be\s+(?:auto[- ]?)?(?:debited|deducted|charged|credited)\b|\bis due\b|\bdue (?:on|by|date)\b|\b(?:minimum|total)\s+(?:amount\s+)?due\b|\bstatement\b|\bbill (?:is )?generated\b|\breminder\b|\bupcoming\b|\bscheduled\b|\bto be debited\b""")
+    private val PROMO = Regex("""(?i)\b(?:pre-?approved|apply now|loan up to|limited period|congratulations|you(?:'ve| have) won|use code|coupon|exclusive offer|cashback up to|unlock\b|shop(?:ping)? again|off on your next|convert (?:it |this )?to (?:easy )?emi|easy emi|fee waived|(?:complete|update) kyc|security awareness)\b""")
+    /** Wording that says nothing happened: "No amount debited", "No money received yet", "no new transaction". */
+    private val NEGATED = Regex("""(?i)\bno\s+(?:new\s+)?(?:amount|money|debit|credit|transaction|payment)\b[^.|]{0,20}\b(?:debited|credited|received|made|posted|yet|done)\b|\bno\s+new\s+transaction\b""")
+    /** "If Rs 500 is debited without your consent..." is a warning, not an event. */
+    private val HYPOTHETICAL = Regex("""(?i)\bif\s+$CUR\s*[\d,.]+\s+(?:is|was|gets|has\s+been)\b""")
+    private val PENDING_REFUND = Regex("""(?i)\brefund\s+(?:initiated|pending|requested|processing|in\s+progress)\b|\bcredit\s+expected\b""")
+    /** Merchant / telco / support messages that quote an amount but are not bank alerts. Only trusted if an account is named. */
+    private val NON_BANK = Regex("""(?i)\b(?:order\s+confirmation|service\s+activation|receipt:|your\s+order|recharge\s+successful|plan\s+credited|validity\s+\d+\s+days|thank you for shopping|complaint|investigat\w*)\b""")
+    /** An OTP challenge carries the code right next to the word: "Delivery OTP 640281", "123456 is your OTP". A mere warning does not. */
+    private val OTP_CHALLENGE = Regex("""(?i)\botp\b[^.|]{0,25}\b\d{4,8}\b|\b\d{4,8}\b[^.|]{0,25}\botp\b""")
 
     // ---------------------------------------------------------------- direction cues
     private val DEBIT_CUE = Regex("""(?i)\b(?:debited|spent|paid|payment of|purchase|purchased|withdrawn|withdrawal|sent|transferred|trf to|deducted|charged)\b|\bdebit(?=\s+(?:inr|rs|₹))|(?<=/)dr(?=/)|\bdr(?=\s+(?:inr|rs|₹)\b)|\b(?:txn|transaction)\b[^.|]{0,40}\bcompleted\b""")
@@ -84,6 +93,8 @@ object SmsParser {
 
     fun parse(sig: RawSignal): ParseResult {
         if (sig.source == Source.SMS && SenderDirectory.isPhoneNumber(sig.sender)) return ParseResult.NotFinancial
+        // Indian SMS headers end in -S/-T/-G for service/transactional and -P for promotional: never a payment alert.
+        if (sig.source == Source.SMS && sig.sender.trim().endsWith("-P", ignoreCase = true)) return ParseResult.NotFinancial
         val body = sig.body.trim()
         if (body.length < 12) return ParseResult.NotFinancial
         val text = body.replace(Regex("""\s*\n\s*"""), " | ").replace(Regex("""\s+"""), " ").trim()
@@ -96,8 +107,15 @@ object SmsParser {
         // An OTP text talks about "payment of Rs 450" but nothing has happened yet. A real alert that merely
         // ends with "never share your OTP" always has a completed-event verb (debited, spent, sent, credited...).
         if (OTP.containsMatchIn(text) && !STRONG_CUE.containsMatchIn(text)) return ParseResult.NotFinancial
+        // An OTP challenge that comes BEFORE the money verb is a checkout step, whatever the verb says afterwards.
+        val challenge = OTP_CHALLENGE.find(text)
+        val completed = STRONG_CUE.find(text)
+        if (challenge != null && completed != null && challenge.range.first < completed.range.first) return ParseResult.NotFinancial
         if ((FAILED.containsMatchIn(text) && !REFUND_POSTED.containsMatchIn(text)) || REQUESTED.containsMatchIn(text) || UPCOMING.containsMatchIn(text)) return ParseResult.NotFinancial
-        if (PROMO.containsMatchIn(text) && !STRONG_CUE.containsMatchIn(text)) return ParseResult.NotFinancial
+        if (NEGATED.containsMatchIn(text) || HYPOTHETICAL.containsMatchIn(text)) return ParseResult.NotFinancial
+        if (PENDING_REFUND.containsMatchIn(text) && !REFUND_POSTED.containsMatchIn(text)) return ParseResult.NotFinancial
+        val namesAnAccount = TAIL.containsMatchIn(text) || VPA.containsMatchIn(text)
+        if (NON_BANK.containsMatchIn(text) && !namesAnAccount) return ParseResult.NotFinancial
 
         // "Rajesh paid you ₹500": a credit whose payer is the text before "paid".
         val paidYou = PAID_YOU.find(text)
@@ -108,6 +126,14 @@ object SmsParser {
         }
         val (amountPaise, amountStart, amountEnd) = amountMatch
         if (amountPaise <= 0) return ParseResult.NotFinancial
+
+        // Promo wording rejects the message when it sits at or before the sentence that holds the amount ("Cashback up to
+        // Rs 500 credited ...") or when no account is named at all. A marketing footer AFTER a real, account-bearing debit
+        // ("Rs 450 debited from A/c XX1234 ... Apply now for our new card.") must not hide the payment.
+        PROMO.find(text)?.let { promo ->
+            val sentenceEnd = text.indexOf('.', amountEnd).let { if (it < 0) text.length else it }
+            if (promo.range.first <= sentenceEnd || !namesAnAccount) return ParseResult.NotFinancial
+        }
 
         val ownerDirection = OWNER_DIRECTION.find(text)?.groupValues?.get(1)?.lowercase()
         val direction = when {
