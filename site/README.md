@@ -14,9 +14,19 @@ python3 -m http.server 8000 -d site
 or `npx serve site` (downloads a preview server if it is not installed; it is not
 a dependency of this page).
 
-**GitHub Pages is NOT enabled. Enabling it or deploying this page requires the
-owner's explicit approval.** The APK link points to GitHub's latest-release page,
-not an assumed published APK. It will become useful when a release is published.
+## Deployment
+
+The owner approved GitHub Pages publication on 2026-10-29. The deployment workflow
+is `.github/workflows/pages.yml`; it uploads only `site/` on changes to this folder
+or the workflow, and can also be run manually.
+
+**Setup pending:** while signed in as `Chiragjjjks`, open repository **Settings →
+Pages → Build and deployment → Source → GitHub Actions**. Then run **Actions →
+Landing page → Run workflow**. The CLI on this Mac is a read-only work account
+and cannot enable this setting. A workflow token cannot enable Pages itself.
+
+Expected URL after a successful deployment: **https://chiragjjjks.github.io/Credu1ar/**.
+This is not confirmed live yet. The APK buttons link to the published latest release.
 
 ## Illustrations and motion
 

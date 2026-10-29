@@ -52,3 +52,8 @@ Short entries. Newest last. Add one whenever a choice will outlive the day. Form
 **Context.** The owner wants a saved v0.2.0 plan that the next session can continue, with explicit done/not-done states.
 **Decision.** Store each version checklist in `plans/vX.Y.Z/plan.md`; update task statuses and completion evidence with the implementation commit. Keep dated history in the existing daily journals.
 **Consequences.** Unfinished, blocked and deferred tasks remain visible across sessions without rewriting older daily records. Creating a plan does not mean its features are implemented or its release is approved.
+
+## ADR-012 — Publish only the landing site through GitHub Pages
+**Context.** The owner explicitly approved publishing the existing landing page on 2026-10-29.
+**Decision.** Use a separate Pages workflow to upload only `site/`, with Pages write and OIDC permissions scoped to that workflow. No build step or new hosting service.
+**Consequences.** Site updates can deploy without changing the Android release cycle. Initial enablement needs the personal account's Pages settings access; the read-only CLI account cannot do it. Verify the live URL before marking publication done.

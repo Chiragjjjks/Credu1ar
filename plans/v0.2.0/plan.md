@@ -28,6 +28,6 @@ These remain visible but are outside the first three feature milestones. Revisit
 - **DEFERRED:** recurring-payment calendar — confirm detected patterns, then offer local reminders.
 - **DEFERRED:** richer corrections — manual cash entries, split categories, refund links and self-transfer corrections.
 - **DEFERRED:** encrypted backup/restore and app lock — preserve learned rules as well as payments.
-- **DEFERRED:** home-screen widget, monthly recap and decorative grain. Pages deployment remains a separate owner decision.
+- **DEFERRED:** home-screen widget, monthly recap and decorative grain. Pages publication is approved separately; deployment progress is in the daily journal.
 
 **Next agent action:** inspect current rules storage and category correction flow, then move task 2 to `DOING`. Ask the owner for the phone report only if still missing; continue independent work while waiting.

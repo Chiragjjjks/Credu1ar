@@ -1,9 +1,10 @@
 # Week 1 · Day 1 — 2026-10-29 (Thursday)
 
 **Version in progress:** v0.1.0 (last tagged: v0.1.0)
-**Status:** done (v0.1.0 published; real-phone checks remain with owner)
+**Status:** in progress (v0.1.0 published; approved Pages setup needs personal-account access)
 
 ## Plan for today
+- [ ] Publish the approved landing site through GitHub Pages and verify its live URL.
 - [x] Save a brief v0.2.0 plan in its own directory, with task statuses and links for the next session.
 - [x] Continuation: inspect Claude's final commit and exact-commit CI; finish the approved v0.1.0 release, verify published assets, and record the outcome.
 - [x] Research: sibling repos (sasta, openscribe, metronudge), Downmix UI reference, SMS/RCS/sideload constraints, open-source references
@@ -19,7 +20,7 @@
 - [x] Push `main` to `git@github-personal:Chiragjjjks/Credu1ar.git` (audited first: no keys, passwords, personal email or real SMS tracked)
 
 ## What is happening now
-v0.1.0 is published from `2029153`. Exact-commit main CI and the tag workflow passed; the downloaded release APK matches the tested artifact. Release handoff and the next-version checklist are saved. Next implementation starts at `plans/v0.2.0/plan.md`; real-phone verification remains with the owner.
+v0.1.0 is published from `2029153`. Exact-commit main CI and the tag workflow passed; the downloaded release APK matches the tested artifact. Release handoff and next-version checklist are saved. Preparing the approved Pages deployment; the personal account must enable Pages before the live URL can be verified.
 
 ## Done
 - `59b86b9` core: parser, merchant directory (~150 brands), categoriser, insights, sample data, 24 tests.
@@ -94,3 +95,17 @@ Owner: install v0.1.0 and run `docs/PHONE-TEST.md`; return Diagnostics and misse
 **Blocked / waiting on owner:** no blocker to saving the plan. Phone results, signing secrets and approval remain requirements for the relevant future tasks.
 
 **Next:** use the version checklist in the next session; inspect the rules storage/correction flow and begin task 2. No app implementation or version bump in this planning session.
+
+## GitHub Pages publication — 2026-10-29
+
+**Plan:** owner explicitly approved publishing the landing site ("yessss"). Add a minimal Pages workflow for `site/`, enable Pages using the personal account, deploy and check the live URL/assets/download link.
+
+**Done:** prepared `.github/workflows/pages.yml` using GitHub's static Pages template, publishing only `site/` with path-filtered pushes and a manual trigger. Recorded owner approval and pending setup in AGENTS.md, README, site/README and the version checklist.
+
+**Decisions:** separate site deployment from Android APK releases; no new hosting service or build dependency (ADR-012).
+
+**Verified how:** workflow YAML parses, uploads only `site/`; HTML/CSS asset references resolve and JavaScript syntax passes. The first asset-check draft incorrectly treated an embedded SVG fragment as a file; corrected the checker, then reran successfully. Latest APK release is already published. No app or visual changes.
+
+**Blocked / waiting on owner:** the CLI account has `pull=true`, `push=false`, `admin=false`; Pages is disabled. The available browser shows Sign in, so no authenticated personal settings session exists. The official configure-pages action documents that enabling Pages needs a token other than GITHUB_TOKEN. Owner must open Settings → Pages → Source = GitHub Actions and run Actions → Landing page → Run workflow.
+
+**Next:** verify a successful Pages deployment and HTTP 200 for the expected URL `https://chiragjjjks.github.io/Credu1ar/` plus CSS/JS/fonts and the APK link. Update publication status to DONE only after those checks.
