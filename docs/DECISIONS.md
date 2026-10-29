@@ -47,3 +47,8 @@ Short entries. Newest last. Add one whenever a choice will outlive the day. Form
 **Context.** The owner asked for a folder of per-day plans (said "apps.md").
 **Decision.** `plans/week-NN/day-N/planned.md`. A directory named `*.md` breaks tools that glob for markdown.
 **Consequences.** Rename with one `git mv` if the owner prefers another name.
+
+## ADR-011 — Brief version checklists alongside daily journals
+**Context.** The owner wants a saved v0.2.0 plan that the next session can continue, with explicit done/not-done states.
+**Decision.** Store each version checklist in `plans/vX.Y.Z/plan.md`; update task statuses and completion evidence with the implementation commit. Keep dated history in the existing daily journals.
+**Consequences.** Unfinished, blocked and deferred tasks remain visible across sessions without rewriting older daily records. Creating a plan does not mean its features are implemented or its release is approved.

@@ -1,10 +1,13 @@
 # plans/ — the project's day-by-day memory
 
-Every day that work happens gets one folder and one file. Anyone (human or agent) can read `plans/` from week 1 to now and know what was planned, what happened, what was decided and what is next.
+Every day that work happens gets one folder and one file. Anyone (human or agent) can read `plans/` from week 1 to now and know what was planned, what happened, what was decided and what is next. Version checklists track upcoming work across days.
+
+**Next version:** [v0.2.0 checklist](v0.2.0/plan.md).
 
 ```
 plans/
   README.md                      <- this file (conventions + index)
+  v0.2.0/plan.md                  <- brief next-version checklist, kept current
   week-01/
     day-1/planned.md             <- first day of work in week 1
     day-2/planned.md
@@ -17,6 +20,7 @@ plans/
 - **Week N** = seven calendar days counted from the project start (week 1 starts 2026-10-29, so week 2 starts 2026-11-05). **Day N** = the Nth day of that week. Skip days with no work; there are no empty files.
 - One `planned.md` per day. It is written at the start (plan) and finished at the end (outcome). Do not rewrite older days; add a dated correction line.
 - Keep it factual and short. Link to commits by SHA, docs by path. Never paste tokens, real SMS text or personal data.
+- Keep each version's actionable checklist in `vX.Y.Z/plan.md`. Update its status rows in the same commit as the work; `DONE` needs verification evidence. Use `BLOCKED`, `DEFERRED` or `NO` with a reason so unfinished work never disappears. Keep daily history in the journals.
 
 ## Template for `planned.md`
 

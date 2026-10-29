@@ -4,6 +4,7 @@
 **Status:** done (v0.1.0 published; real-phone checks remain with owner)
 
 ## Plan for today
+- [x] Save a brief v0.2.0 plan in its own directory, with task statuses and links for the next session.
 - [x] Continuation: inspect Claude's final commit and exact-commit CI; finish the approved v0.1.0 release, verify published assets, and record the outcome.
 - [x] Research: sibling repos (sasta, openscribe, metronudge), Downmix UI reference, SMS/RCS/sideload constraints, open-source references
 - [x] Repo init with the personal identity + SSH alias remote
@@ -18,7 +19,7 @@
 - [x] Push `main` to `git@github-personal:Chiragjjjks/Credu1ar.git` (audited first: no keys, passwords, personal email or real SMS tracked)
 
 ## What is happening now
-v0.1.0 is published from `2029153`. Exact-commit main CI and the tag workflow passed; the downloaded release APK matches the tested artifact. Handoff updated; next is the owner's real-phone checklist.
+v0.1.0 is published from `2029153`. Exact-commit main CI and the tag workflow passed; the downloaded release APK matches the tested artifact. Release handoff and the next-version checklist are saved. Next implementation starts at `plans/v0.2.0/plan.md`; real-phone verification remains with the owner.
 
 ## Done
 - `59b86b9` core: parser, merchant directory (~150 brands), categoriser, insights, sample data, 24 tests.
@@ -79,3 +80,17 @@ Owner: install v0.1.0 and run `docs/PHONE-TEST.md`; return Diagnostics and misse
 **Blocked / waiting on owner:** physical-phone checks and real formats; signing secrets for future update continuity; optional Pages approval. None prevented the approved preview release.
 
 **Next:** owner runs `docs/PHONE-TEST.md` against the published APK and returns Diagnostics. Future agents should start at AGENTS.md, add fixtures for actual missed formats, and keep the release signing caveat visible.
+
+## Next-version planning — 2026-10-29
+
+**Plan for this session:** create `plans/v0.2.0/plan.md`, keep it brief and actionable, define status updates and completion evidence, and link it from the project handoff. Planning only; implementation and a later release are separate work.
+
+**Done:** created `plans/v0.2.0/plan.md` with ordered tasks, explicit statuses, completion checks, owner dependencies and deferred improvements. Linked it from AGENTS.md, PLAN.md and plans/README.md.
+
+**Decisions:** version checklists stay separate from day-by-day history; update statuses with the work and attach evidence before marking DONE (ADR-011). The first feature milestones are rules editor, merchant pages and budgets. Recurring calendar, richer corrections, encrypted backup, app lock, widget/recap and decorative grain remain visible as deferred work.
+
+**Verified how:** checked relative Markdown links, checklist statuses and `git diff --check`. Documentation only; app tests are unnecessary for this change.
+
+**Blocked / waiting on owner:** no blocker to saving the plan. Phone results, signing secrets and approval remain requirements for the relevant future tasks.
+
+**Next:** use the version checklist in the next session; inspect the rules storage/correction flow and begin task 2. No app implementation or version bump in this planning session.

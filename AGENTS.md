@@ -28,6 +28,7 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 3. At the **end**, fill *Done*, *Decisions*, *Verified how*, *Blocked / waiting on owner*, and *Next*, and update `Current state` below.
 4. Never rewrite an earlier day's file except to fix a factual error; add a dated correction instead.
 5. Decisions with lasting effect also go in `docs/DECISIONS.md` (short ADR entries).
+6. Keep the active version checklist (`plans/v0.2.0/plan.md`) current in the same commit as each task. Record `TODO`, `DOING`, `DONE`, `BLOCKED`, `DEFERRED` or `NO`; completed tasks need evidence, and blocked/deferred/dropped tasks need a reason.
 
 ## Current state: v0.1.0 released (2026-10-29, week 1 day 1)
 
@@ -40,6 +41,8 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 
 **Not verified:** a real phone (restricted-settings flow, Google Messages RCS, OEM battery kill, real bank formats) → `docs/PHONE-TEST.md`. Idle battery/RAM/CPU per SMS are unmeasured.
 
+**Next version planned:** [`plans/v0.2.0/plan.md`](plans/v0.2.0/plan.md) tracks rules editor → merchant pages → category budgets, verification, release dependencies and saved follow-ups. Planning is done; feature implementation has not started.
+
 **Known sharp edges:** the emulator console `sms send` does not deliver on this image, so use `scripts/inject.sh` (debug build only). `adb shell` re-parses quotes: always go through `scripts/inject.sh`. Launch the emulator detached (`start_new_session`) or the harness kills it when the command returns.
 
 **Delegated to Codex (gpt-6.1-sol, worktrees):** (1) landing page `site/`: done, reviewed and merged (`121d348`), not deployed; (2) adversarial parser fixtures with a known-failures ratchet: done, reviewed, merged, and all 36 failures it found are fixed. See `plans/week-01/day-1/planned.md` → *Delegated*.
@@ -51,7 +54,7 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 1. Owner: install v0.1.0, run `docs/PHONE-TEST.md`, paste back the Diagnostics report; add real formats as fixtures before changing parser rules.
 2. Owner: set the four CI signing secrets (`docs/ARCHITECTURE.md`) before the next release. The published v0.1.0 uses a temporary debug key; moving to the private key requires uninstall/reinstall (export first; re-import SMS afterward).
 3. Owner decides whether to enable GitHub Pages for the completed `site/`; deployment is not approved yet.
-4. v0.2.0: rules editor, merchant pages, budgets, recurring calendar, grain overlay and haptics from `docs/DESIGN.md`. Later releases need fresh approval.
+4. Follow [`plans/v0.2.0/plan.md`](plans/v0.2.0/plan.md): start with the rules editor, then merchant pages and category budgets. Keep statuses current; recurring calendar and other follow-ups are recorded there. Later releases need fresh approval.
 
 ## Rules (hard)
 
@@ -93,6 +96,7 @@ adb emu sms send HDFCBK "Rs.450.00 debited from A/c XX1234 on 29-10-26 to VPA ze
 | `docs/PHONE-TEST.md` | Owner's real-phone checklist |
 | `docs/releases/vX.Y.Z.md` | Hand-written release notes, one per tag |
 | `plans/` | Day-by-day journal (the project's memory) |
+| `plans/v0.2.0/plan.md` | Next-version task statuses, completion checks and saved follow-ups |
 | `core/` | Pure Kotlin: `model`, `parse`, `merchant`, `category`, `insights` |
 | `app/` | Android: `ingest` (receiver, listener, catch-up), `data` (SQLite), `ui` (theme, kit, screens), `sample` |
 | `scripts/` | `check-version.sh`, `android-smoke.sh` (CI), `inject.sh` + `dump-db.sh` (debug-build emulator tools) |

@@ -4,6 +4,8 @@
 
 Agents: start with `AGENTS.md` (current state, rules, code map). This file is the **why and the roadmap**. The day-by-day log lives in `plans/`.
 
+**Next-version task statuses and delivery scope:** [`plans/v0.2.0/plan.md`](plans/v0.2.0/plan.md). Use that checklist for current priorities and deferred items; the version table below is the original broad roadmap.
+
 **Status (2026-10-29):** v0.1.0 is built and verified on an emulator (1.32 MB signed APK, 26 JVM tests, end-to-end SMS smoke test). It is not released and has not been tried on a real phone: see `docs/PHONE-TEST.md`.
 
 ---
