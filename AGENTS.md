@@ -32,7 +32,7 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 ## Current state: v0.1.0 built, NOT released (2026-10-29, week 1 day 1)
 
 **Done and verified on this Mac (JDK 17, Android 15 emulator `mn35`):**
-- `:core` parser/merchants/categoriser/insights/sample data, 26 JVM tests green (37 parser fixtures across HDFC/ICICI/SBI/Axis/Kotak/PNB/IDFC styles).
+- `:core` parser/merchants/categoriser/insights/sample data, 28 JVM tests green: 37 hand-written parser fixtures plus 100 adversarial fixtures written by Codex (ratchet `knownFailures` is empty; the first run failed 36, all fixed).
 - `:app` capture (SmsReceiver, NotificationCaptureService, CatchUp), SQLite repo with de-dup, and the full Signal Noir UI (intro, Arm-it, Pulse, Ledger, Insights, grouped Needs-a-look, payment sheet, System).
 - End-to-end: a real multi-part SMS PDU through the production receiver is stored, a UPI-app notification for the same payment is de-duplicated (SMS wins), an OTP is dropped unread. `scripts/android-smoke.sh` passes.
 - Release build: 1.32 MB, R8-minified, signed with the owner's private key (`~/.credu1ar/`, outside the repo), runs identically to debug. `lintDebug` has 0 errors.
@@ -41,7 +41,7 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 
 **Known sharp edges:** the emulator console `sms send` does not deliver on this image, so use `scripts/inject.sh` (debug build only). `adb shell` re-parses quotes: always go through `scripts/inject.sh`. Launch the emulator detached (`start_new_session`) or the harness kills it when the command returns.
 
-**Delegated to Codex (gpt-6.1-sol, worktrees):** (1) landing page `site/`: done, reviewed and merged (`121d348`), not deployed; (2) adversarial parser fixtures with a known-failures ratchet: still running when this was written. Its report decides the next parser fixes. See `plans/week-01/day-1/planned.md` → *Delegated*.
+**Delegated to Codex (gpt-6.1-sol, worktrees):** (1) landing page `site/`: done, reviewed and merged (`121d348`), not deployed; (2) adversarial parser fixtures with a known-failures ratchet: done, reviewed, merged, and all 36 failures it found are fixed. See `plans/week-01/day-1/planned.md` → *Delegated*.
 
 **Reviewing delegated work:** do not trust the summary. Check `git diff --stat` for scope, grep for secrets/external calls, run the tests, and look at screenshots yourself. A first look can mislead (headless Chrome is at least ~500 px wide, so test narrow layouts through a sized iframe).
 

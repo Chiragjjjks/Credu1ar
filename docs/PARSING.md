@@ -42,6 +42,21 @@ scripts/dump-db.sh               # what the app stored
 scripts/android-smoke.sh app/build/outputs/apk/debug/app-debug.apk
 ```
 
+## Independent red-team corpus
+
+`AdversarialFixtures.kt` holds 100 synthetic messages written by a *different* agent (Codex) from ground truth, not from the parser's behaviour: false positives that must be ignored (promos, receipts, OTP challenges, future credits, refunds that are only initiated), false negatives that must parse (other banks' styles, `INR.450`, `Dr`/`Cr`, `Txn … completed`), and tricky ones (balances before the payment, names containing "on"/"from", two payments in one SMS). The first run failed 36 of 100; all 36 are fixed.
+
+`AdversarialFixtureTest` is a **ratchet**: it asserts that the set of failing fixture names equals `knownFailures` (currently empty). Break a fixture and the build fails; fix one that is listed and the build also fails until you remove its name. When a real message is misread, add it to `ParserFixtures.kt` (or here), and if you cannot fix it right away list its name in `knownFailures` so the debt is visible.
+
+## Rules the red-team forced (read before changing the gate)
+
+- A balance or limit phrase ("Available balance in A/c XX1 is Rs 9000", "Available credit limit on Card XX1: Rs 80000") consumes the first amount after it (`BALANCE_SPAN`); it is never the payment.
+- The account's own verb wins ("A/c XX1 has been debited … which is credited").
+- Promo wording only rejects a message when it sits at or before the sentence holding the amount, or when no account is named. A marketing footer after a real debit must not hide the payment (fixture T22).
+- An OTP *challenge* (code next to "OTP") before the money verb is a checkout step; a "never share your OTP" footer is not.
+- Merchant receipts, telco activations and complaint acknowledgements are not bank alerts unless an account is named.
+- Promotional `-P` SMS headers are never payment alerts.
+
 ## Known gaps
 
-Fixtures are synthetic, so real-world coverage is unproven. An independent adversarial corpus (`AdversarialFixtures.kt`, ratchet-style) tracks known failures; see the latest `plans/` entry for the current list.
+Fixtures are still synthetic, so coverage of real bank wording is unproven until the owner's real messages arrive (System → Couldn't read, then the `add-bank-parser` skill). One SMS holding two payments is reported as unreadable rather than split.
