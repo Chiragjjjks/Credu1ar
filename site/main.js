@@ -200,7 +200,6 @@
     loader.hidden = false;
     introRunning = true;
     behindLoader.forEach((el) => { el.inert = true; });
-    $('#skip-intro').focus({ preventScroll: true });
     introRaf = requestAnimationFrame(tickIntro);
   }
   document.addEventListener('visibilitychange', () => {

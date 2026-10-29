@@ -45,3 +45,17 @@ confirm salary and settlement keep baseline spending at ₹3,000, use keyboard
 navigation and FAQ controls, emulate reduced motion, and check console errors,
 failed requests, horizontal overflow and external network requests. Capture
 screenshots outside the repository. Non-font payload should remain under 250 KB.
+
+## Last verified — 2026-10-29
+
+Served with Python's HTTP server and checked using Playwright with installed
+headless Google Chrome at 375 × 900, 768 × 900 and 1280 × 900. Hero, full-page
+and demo screenshots were captured outside the checkout and visually inspected.
+No horizontal overflow was found. All six sample amounts and totals passed;
+salary and card settlement both left spending at ₹3,000. Checks passed for
+keyboard FAQ activation, intro skipping/focus return, reduced motion, off-screen
+demo pause/resume, ticker pause and the no-JavaScript fallback. No console errors,
+failed requests or external runtime requests were recorded. Computed text colours
+on their solid backgrounds all met 4.5:1. Runtime HTML/CSS/JS/favicon payload:
+45,781 bytes excluding fonts. Physical handset browsers and Android installation
+were not tested by this landing-page task.
