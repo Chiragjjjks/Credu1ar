@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- DEBUG BUILDS ONLY. Lets `adb shell am broadcast` push a fake SMS through the real SmsReceiver. -->
+        <receiver android:name=".debug.DebugInjectReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="io.github.chiragjjjks.credu1ar.DEBUG_SMS" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
