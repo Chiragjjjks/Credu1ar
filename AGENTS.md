@@ -41,7 +41,9 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 
 **Known sharp edges:** the emulator console `sms send` does not deliver on this image, so use `scripts/inject.sh` (debug build only). `adb shell` re-parses quotes: always go through `scripts/inject.sh`. Launch the emulator detached (`start_new_session`) or the harness kills it when the command returns.
 
-**Delegated to Codex (gpt-6.1-sol, worktrees):** (1) landing page `site/`; (2) adversarial parser fixtures with a known-failures ratchet. Their reports decide the next parser fixes. Check `plans/week-01/day-1/planned.md` → *Delegated* for status and branch names.
+**Delegated to Codex (gpt-6.1-sol, worktrees):** (1) landing page `site/`: done, reviewed and merged (`121d348`), not deployed; (2) adversarial parser fixtures with a known-failures ratchet: still running when this was written. Its report decides the next parser fixes. See `plans/week-01/day-1/planned.md` → *Delegated*.
+
+**Reviewing delegated work:** do not trust the summary. Check `git diff --stat` for scope, grep for secrets/external calls, run the tests, and look at screenshots yourself. A first look can mislead (headless Chrome is at least ~500 px wide, so test narrow layouts through a sized iframe).
 
 ## Next, in order
 

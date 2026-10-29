@@ -18,6 +18,7 @@ Android only (sideloaded APK, Android 8+). Personal project, not affiliated with
 - **Design language:** [`docs/DESIGN.md`](docs/DESIGN.md)
 - **Day-by-day log:** [`plans/`](plans/README.md)
 - **For coding agents:** [`AGENTS.md`](AGENTS.md)
+- **Landing page source:** [`site/`](site/README.md) (static, not deployed yet)
 
 ## Install
 

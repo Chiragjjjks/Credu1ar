@@ -45,7 +45,7 @@ Wrapping up: docs and journal written; waiting on the two Codex reports (site, a
 - Screenshots reviewed by eye for every screen; palette validated with `validate_palette.js` (dark, #000 and #0a0a0a).
 
 ## Delegated (Codex, gpt-6.1-sol, worktrees)
-- **Landing site `site/`** — task `Credu1ar landing site`; touches only `site/`; no push, no Pages.
+- **Landing site `site/`: DONE, reviewed, merged** (`121d348`, from branch `t3/build-privacy-landing-page` @ `3fbdb2c`). I did not take the report on trust: confirmed only `site/` changed (9 files, owner identity), no external URLs beyond the project's own GitHub links, no `fetch`/XHR/beacon, no trackers or invented stats, ~46 KB excluding fonts, and looked at it in headless Chrome (desktop hero, demo, category ring; true 390 px layout via iframe; zero horizontal overflow at 320/360/375/390/414/768). Headless Chrome crops below ~500 px wide, which looked like a clipped layout until re-tested at true width. Not tested: real phone browsers. Not deployed (GitHub Pages needs the owner).
 - **Adversarial parser fixtures** — task `Red-team the SMS parser`; adds only `core/src/test/.../AdversarialFixtures*.kt` with a known-failures ratchet and a ranked failure report. Results: see below once delivered.
 
 ## Blocked / waiting on owner
