@@ -62,7 +62,9 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 - **Dedup before insert.** SMS and notification for the same payment must become one row.
 - **Not-spending kinds** (card-bill settlement, self transfer, investment) never count toward spend totals.
 - **Category colours** come from `docs/DESIGN.md` and are fixed per category; re-validate if you change one.
-- **Releases, tags, GitHub Pages and pushes to other repos need the owner's explicit approval.** Pushing to `main` of this repo is part of normal work.
+- **Commit small, push often.** Every logical change (even a typo, a doc, a rename) is its own commit with a clear message, and `main` is pushed after each meaningful commit. The owner follows progress on GitHub, not in an IDE. Do not push while a CI run you still need is in progress (the workflow cancels in-progress runs on the same branch); push the moment it ends.
+- **Releases, tags, GitHub Pages and pushes to other repos need the owner's explicit approval.** Pushing to `main` of this repo is part of normal work. The owner approved the v0.1.0 release on 2026-10-29 ("Do a release also"); confirm before later ones.
+- **`gh` is the work account** and has read-only access to this repo: it cannot create releases or set secrets here. Releases are made by the tag workflow inside GitHub; secrets are set by the owner.
 - **Git identity.** This repo uses the personal identity (`Chiragjjjks`, set locally) and the SSH host alias: `git@github-personal:Chiragjjjks/Credu1ar.git`. The global git/`gh` login is a work account; do **not** use HTTPS or `gh` to push here.
 
 ## Build and test (this Mac)
