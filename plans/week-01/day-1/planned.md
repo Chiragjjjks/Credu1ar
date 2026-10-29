@@ -17,7 +17,7 @@
 - [x] Push `main` to `git@github-personal:Chiragjjjks/Credu1ar.git` (audited first: no keys, passwords, personal email or real SMS tracked)
 
 ## What is happening now
-Wrapping up: docs and journal written; waiting on the two Codex reports (site, adversarial parser fixtures) before the first push.
+Release candidate: parser hardened (100/100 red-team fixtures), full gate green locally (tests, lint, release APK, emulator smoke). Pushing `main`, then tagging `v0.1.0` once CI is green on the exact commit.
 
 ## Done
 - `59b86b9` core: parser, merchant directory (~150 brands), categoriser, insights, sample data, 24 tests.
@@ -37,6 +37,8 @@ Wrapping up: docs and journal written; waiting on the two Codex reports (site, a
 - Git remote uses the SSH alias `github-personal` + local `Chiragjjjks` identity; the HTTPS URL would authenticate as the work account.
 - Debug build carries an SMS injector (src/debug only) because `adb emu sms send` is dead on this emulator image; release has none (verified).
 - Pace/average figures show whole rupees; the status strip never says LISTENING unless SMS or notification access is really granted.
+- **Owner instructions mid-day:** commit every small change and push to GitHub so progress is visible there (`AGENTS.md` rule, memory saved); "Do a release also" approves v0.1.0. I held the tag until the parser red-team findings were fixed, because shipping known phantom-payment bugs in a money app would be the wrong release.
+- CI runs without signing secrets (`gh` here is the work account with read-only access; secrets are the owner's), so the published v0.1.0 APK is signed with a throwaway key. Stated plainly in the release notes with the recovery path (re-import from SMS, CSV export).
 
 ## Verified how
 - `./gradlew :core:test` → 26 tests, 0 failures. `lintDebug` → 0 errors.
@@ -46,7 +48,9 @@ Wrapping up: docs and journal written; waiting on the two Codex reports (site, a
 
 ## Delegated (Codex, gpt-6.1-sol, worktrees)
 - **Landing site `site/`: DONE, reviewed, merged** (`121d348`, from branch `t3/build-privacy-landing-page` @ `3fbdb2c`). I did not take the report on trust: confirmed only `site/` changed (9 files, owner identity), no external URLs beyond the project's own GitHub links, no `fetch`/XHR/beacon, no trackers or invented stats, ~46 KB excluding fonts, and looked at it in headless Chrome (desktop hero, demo, category ring; true 390 px layout via iframe; zero horizontal overflow at 320/360/375/390/414/768). Headless Chrome crops below ~500 px wide, which looked like a clipped layout until re-tested at true width. Not tested: real phone browsers. Not deployed (GitHub Pages needs the owner).
-- **Adversarial parser fixtures** — task `Red-team the SMS parser`; adds only `core/src/test/.../AdversarialFixtures*.kt` with a known-failures ratchet and a ranked failure report. Results: see below once delivered.
+- **Adversarial parser fixtures: DONE, reviewed, merged, all findings fixed.** Branch `t3/adversarial-parser-fixtures` @ `9515d6d`; scope verified (exactly 2 test files). 100 synthetic fixtures written from ground truth: **64 passed, 36 failed on my parser**, several of the dangerous kind (a balance or credit limit recorded as the payment amount, a promo or merchant receipt recorded as a payment, one wrong direction). I did not release on top of that. Fixed in three commits, each with the ratchet updated: `289f38b` (balances/limits, owner-account direction, `INR.450`/`Dr`/`Cr`/`Txn completed`, refund-with-failed, rail vs "card"), `6e19974` (promo/receipt/OTP-challenge/future-credit/pending-refund guards), `a336313` (brand-prefix suffixes, CRED store purchases, payee names, two payments in one SMS). Now 100/100, ratchet `knownFailures` is empty, 28 tests total.
+  - **A regression I caused and the ratchet caught:** making promo wording reject unconditionally broke `T22` (a real debit followed by "Apply now for our new card."). Fixed by scoping promo rejection to wording at/before the amount's sentence or with no account named.
+  - Codex also flagged design questions I am recording, not solving today: sender role (merchant vs bank headers) should gate ingestion more; one `Outcome.Txn` cannot represent two payments (now reported as unreadable); `CRED` category needs transaction-purpose evidence (partly done via the `merch` hint).
 
 ## Blocked / waiting on owner
 - Real-phone test (`docs/PHONE-TEST.md`) — only the owner can do it.
