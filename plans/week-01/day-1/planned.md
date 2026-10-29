@@ -1,45 +1,56 @@
 # Week 1 · Day 1 — 2026-10-29 (Thursday)
 
 **Version in progress:** v0.1.0 (last tagged: none)
-**Status:** in progress
+**Status:** in progress (end-of-day wrap-up)
 
 ## Plan for today
 - [x] Research: sibling repos (sasta, openscribe, metronudge), Downmix UI reference, SMS/RCS/sideload constraints, open-source references
 - [x] Repo init with the personal identity + SSH alias remote
 - [x] `PLAN.md`, `docs/DESIGN.md`, `AGENTS.md`, `CLAUDE.md`, `plans/` journal
-- [ ] Gradle project: `:core` (pure Kotlin) + `:app` (Compose), builds locally
-- [ ] `:core`: money, parser, merchant directory, categoriser, insights — with fixture tests
-- [ ] `:app`: SMS receiver, notification listener, catch-up scan, SQLite, dedup
-- [ ] `:app` UI: intro, onboarding, Pulse, Ledger, Insights, Review, System (Signal Noir)
-- [ ] Emulator proof: fake bank SMS → row appears; screenshots
-- [ ] CI workflow + release notes draft (no tag)
-- [ ] Delegate to Codex: landing site, independent parser review
+- [x] Gradle project: `:core` (pure Kotlin) + `:app` (Compose), builds locally
+- [x] `:core`: money, parser, merchant directory, categoriser, insights — with fixture tests (26 green)
+- [x] `:app`: SMS receiver, notification listener, catch-up scan, SQLite, dedup
+- [x] `:app` UI: intro, onboarding, Pulse, Ledger, Insights, Review, System (Signal Noir)
+- [x] Emulator proof: real multi-part SMS PDU → row appears; screenshots reviewed and 8 UI/data bugs fixed
+- [x] CI workflow + release notes draft (no tag)
+- [x] Delegate to Codex: landing site, independent parser review (running)
 - [ ] Push `main` to `git@github-personal:Chiragjjjks/Credu1ar.git`
 
 ## What is happening now
-Writing the planning docs and agent memory before any code, so the next agent can resume from the repo alone.
+Wrapping up: docs and journal written; waiting on the two Codex reports (site, adversarial parser fixtures) before the first push.
 
 ## Done
-- Research findings are folded into `PLAN.md` §3–§5.
+- `59b86b9` core: parser, merchant directory (~150 brands), categoriser, insights, sample data, 24 tests.
+- `6049ef0` app: capture pipeline + debug-only PDU injector + scripts.
+- `4addbbc` app: Signal Noir UI.
+- Uncommitted at time of writing: lint fixes (API 26 safety), honest "SAMPLE DATA · NOT LISTENING" strip, review copy, CI workflow, scripts, docs (ARCHITECTURE, PARSING, CATEGORIES, PHONE-TEST), release notes v0.1.0, two project skills.
 
 ## Decisions
-- Native Kotlin + Compose, two modules (`:core` pure JVM, `:app`). Reason: smallest APK, instant wake-ups, direct SMS/notification APIs, fast JVM tests for the parser.
-- No foreground service; manifest receiver + catch-up scan instead. Reason: zero idle cost, nothing lost if the OS kills the process.
-- Plain `SQLiteOpenHelper`, not Room. Reason: smaller APK, no annotation processor (KSP/AGP 9 compatibility risk), SQL aggregates are the heart of analytics.
-- Journal folder is `plans/` (the owner asked for a folder called "apps.md"; a folder named `*.md` breaks tools that glob for markdown files, so it is `plans/`; renaming is one `git mv`).
-- Git remote uses the SSH alias `github-personal`, local identity `Chiragjjjks`, copied from the owner's other personal repos. The HTTPS URL in the request would authenticate as the work account.
-- Parsers written from scratch; PennyWise AI (copyleft) is idea-only.
+- Native Kotlin + Compose, two modules (`:core` pure JVM, `:app`). Smallest APK, instant wake-ups, fast parser tests. (ADR-001/002)
+- No foreground service: manifest receiver + catch-up scan. (ADR-003)
+- Two capture paths, one pipeline: SMS + notification listener (RCS and UPI apps). (ADR-004)
+- Plain SQLite, no Room. (ADR-005) Money is integer paise. (ADR-006) Custom Canvas charts. (ADR-007)
+- Parsers written from scratch (PennyWise AI is copyleft). (ADR-008)
+- Release cycle copies Sasta; **signing key is private** (`~/.credu1ar/`, never committed), unlike Sasta's public debug key, because this app reads bank SMS.
+- Journal folder is `plans/`, not a folder literally named `apps.md` (tools that glob `*.md` would treat it as a file). (ADR-010)
+- Git remote uses the SSH alias `github-personal` + local `Chiragjjjks` identity; the HTTPS URL would authenticate as the work account.
+- Debug build carries an SMS injector (src/debug only) because `adb emu sms send` is dead on this emulator image; release has none (verified).
+- Pace/average figures show whole rupees; the status strip never says LISTENING unless SMS or notification access is really granted.
 
 ## Verified how
-- Palette: `validate_palette.js` dark run on `#0a0a0a` and `#000000`: all checks pass (worst adjacent CVD ΔE 8.4, normal-vision 19.3).
-- Toolchain on this Mac: JDK 17 (`/opt/homebrew/opt/openjdk@17`), Android SDK 37 + build-tools 36 (`/opt/homebrew/share/android-commandlinetools`), Gradle 9.3.1 wrapper, AVD `mn35` (Android 35, arm64).
+- `./gradlew :core:test` → 26 tests, 0 failures. `lintDebug` → 0 errors.
+- Emulator (Android 15, arm64): injected HDFC UPI (single PDU), ICICI card (2-part PDU), Google Pay notification, OTP, duplicate PhonePe notification → DB had exactly 2 payments, `n_ignored=1`, `n_duplicate=1`, SMS source kept. `scripts/android-smoke.sh` → SMOKE PASS.
+- Release APK (R8) installed with the private key: launches, loads sample data via the UI, no crash, identical numbers; `DebugInjectReceiver` absent. Size 1.32 MB; PSS ~38 MB with UI open.
+- Screenshots reviewed by eye for every screen; palette validated with `validate_palette.js` (dark, #000 and #0a0a0a).
 
-## Delegated (Codex)
-- none yet
+## Delegated (Codex, gpt-6.1-sol, worktrees)
+- **Landing site `site/`** — task `Credu1ar landing site`; touches only `site/`; no push, no Pages.
+- **Adversarial parser fixtures** — task `Red-team the SMS parser`; adds only `core/src/test/.../AdversarialFixtures*.kt` with a known-failures ratchet and a ranked failure report. Results: see below once delivered.
 
 ## Blocked / waiting on owner
 - Real-phone test (`docs/PHONE-TEST.md`) — only the owner can do it.
-- Approval to tag/publish v0.1.0.
+- CI signing secrets (`CREDU1AR_KEYSTORE_BASE64` etc.); approval to tag v0.1.0; GitHub Pages for `site/`.
+- Confirm the app/package name (`Credu1ar`, `io.github.chiragjjjks.credu1ar`).
 
 ## Next
-Create the Gradle project and get `./gradlew :core:test` green.
+Integrate the Codex outputs, fix top parser failures, push `main`, watch CI.

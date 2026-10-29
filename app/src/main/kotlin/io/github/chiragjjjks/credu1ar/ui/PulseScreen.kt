@@ -46,11 +46,17 @@ fun MonthSwitcher(month: YearMonth, onChange: (YearMonth) -> Unit) {
 @Composable
 fun LiveStrip(s: AppModel.UiState) {
     val a = s.access
-    val armed = a.sms || a.notifListener || s.counts.sample > 0
+    // Honest status: sample data is not listening. Only real SMS or notification access counts as armed.
+    val armed = a.sms || a.notifListener
+    val label = when {
+        armed -> "LISTENING"
+        s.counts.sample > 0 -> "SAMPLE DATA · NOT LISTENING"
+        else -> "NOT ARMED"
+    }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         LiveDot(if (armed) C.MoneyIn else C.Attention, pulse = armed)
         Spacer(Modifier.width(8.dp))
-        Txt(if (armed) "LISTENING" else "NOT ARMED", T.Eyebrow.copy(color = if (armed) C.Ink else C.Attention))
+        Txt(label, T.Eyebrow.copy(color = if (armed) C.Ink else C.Attention))
         Spacer(Modifier.width(12.dp))
         Txt("SMS ${if (a.sms) "✓" else "✕"}", T.Eyebrow.copy(color = if (a.sms) C.Mid else C.Faint))
         Spacer(Modifier.width(10.dp))

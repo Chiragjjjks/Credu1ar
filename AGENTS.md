@@ -29,15 +29,27 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 4. Never rewrite an earlier day's file except to fix a factual error; add a dated correction instead.
 5. Decisions with lasting effect also go in `docs/DECISIONS.md` (short ADR entries).
 
-## Current state: day 1 (2026-10-29), pre-release
+## Current state: v0.1.0 built, NOT released (2026-10-29, week 1 day 1)
 
-See `plans/week-01/day-1/planned.md` for the live status. Summary is kept here once something ships.
+**Done and verified on this Mac (JDK 17, Android 15 emulator `mn35`):**
+- `:core` parser/merchants/categoriser/insights/sample data, 26 JVM tests green (37 parser fixtures across HDFC/ICICI/SBI/Axis/Kotak/PNB/IDFC styles).
+- `:app` capture (SmsReceiver, NotificationCaptureService, CatchUp), SQLite repo with de-dup, and the full Signal Noir UI (intro, Arm-it, Pulse, Ledger, Insights, grouped Needs-a-look, payment sheet, System).
+- End-to-end: a real multi-part SMS PDU through the production receiver is stored, a UPI-app notification for the same payment is de-duplicated (SMS wins), an OTP is dropped unread. `scripts/android-smoke.sh` passes.
+- Release build: 1.32 MB, R8-minified, signed with the owner's private key (`~/.credu1ar/`, outside the repo), runs identically to debug. `lintDebug` has 0 errors.
+
+**Not verified:** a real phone (restricted-settings flow, Google Messages RCS, OEM battery kill, real bank formats) → `docs/PHONE-TEST.md`. CI workflow is written but has not run yet. Idle battery/RAM/CPU per SMS are unmeasured.
+
+**Known sharp edges:** the emulator console `sms send` does not deliver on this image, so use `scripts/inject.sh` (debug build only). `adb shell` re-parses quotes: always go through `scripts/inject.sh`. Launch the emulator detached (`start_new_session`) or the harness kills it when the command returns.
+
+**Delegated to Codex (gpt-6.1-sol, worktrees):** (1) landing page `site/`; (2) adversarial parser fixtures with a known-failures ratchet. Their reports decide the next parser fixes. Check `plans/week-01/day-1/planned.md` → *Delegated* for status and branch names.
 
 ## Next, in order
 
-1. Ship v0.1.0 as scoped in `PLAN.md` §9 (needs the owner's approval to tag).
-2. Owner runs `docs/PHONE-TEST.md` on the real phone and pastes back the Diagnostics report.
-3. v0.2.0: rules editor, merchant pages, budgets, recurring calendar.
+1. Merge/integrate the Codex results (site, adversarial fixtures), fix the top parser failures, add them to the ratchet.
+2. Push `main` and watch the first CI run (it exercises the emulator smoke test on x86_64 for the first time).
+3. Owner: run `docs/PHONE-TEST.md`, paste back the Diagnostics report; add real formats as fixtures.
+4. Owner decides: set CI signing secrets, approve the v0.1.0 tag, enable GitHub Pages for `site/`.
+5. v0.2.0: rules editor, merchant pages, budgets, recurring calendar, grain overlay and haptics from `docs/DESIGN.md`.
 
 ## Rules (hard)
 
@@ -79,10 +91,10 @@ adb emu sms send HDFCBK "Rs.450.00 debited from A/c XX1234 on 29-10-26 to VPA ze
 | `plans/` | Day-by-day journal (the project's memory) |
 | `core/` | Pure Kotlin: `model`, `parse`, `merchant`, `category`, `insights` |
 | `app/` | Android: `ingest` (receiver, listener, catch-up), `data` (SQLite), `ui` (theme, kit, screens), `sample` |
-| `scripts/` | `check-version.sh`, emulator smoke test |
+| `scripts/` | `check-version.sh`, `android-smoke.sh` (CI), `inject.sh` + `dump-db.sh` (debug-build emulator tools) |
 | `.github/workflows/android.yml` | CI + release |
 | `.claude/skills/` | Project skills (add a bank parser, cut a release) |
-| `site/` | Landing page (planned) |
+| `site/` | Landing page (built by Codex in a worktree; not deployed) |
 
 ## Delegating to Codex
 

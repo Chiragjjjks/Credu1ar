@@ -44,8 +44,9 @@ class NotificationCaptureService : NotificationListenerService() {
         Ingest.handle(this, signal)
     }
 
+    @Suppress("DEPRECATION") // the flags overload is API 33+; this one works on every supported version
     private fun label(pkg: String): String = runCatching {
-        packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, PackageManager.ApplicationInfoFlags.of(0))).toString()
+        packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString()
     }.getOrDefault(pkg)
 }
 

@@ -26,7 +26,7 @@ fun ReviewScreen(s: AppModel.UiState, model: AppModel, nav: Nav, onBack: () -> U
     Column(Modifier.fillMaxSize().background(C.Black).statusBarsPadding()) {
         Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Txt("←", T.Title, Modifier.pressable(onClick = onBack).padding(end = 14.dp, top = 4.dp, bottom = 4.dp))
-            Eyebrow("Needs a look", "!", live = s.review.isNotEmpty(), trailing = { Txt("${s.reviewGroups.size} LEFT", T.Eyebrow) })
+            Eyebrow("Needs a look", null, live = s.review.isNotEmpty(), trailing = { Txt("${s.reviewGroups.size} LEFT", T.Eyebrow) })
         }
         if (s.reviewGroups.isEmpty()) {
             Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -44,7 +44,7 @@ fun ReviewScreen(s: AppModel.UiState, model: AppModel, nav: Nav, onBack: () -> U
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Txt(g.name, T.Title, maxLines = 1)
-                                Txt("${g.count} payment${if (g.count == 1) "" else "s"} · last ${Fmt.dayShort(t.occurredAtMillis, s.now)}", T.Small)
+                                Txt("${g.count} payment${if (g.count == 1) "" else "s"} · latest ${Fmt.dayShort(t.occurredAtMillis, s.now)}", T.Small)
                             }
                             Txt(rupees(g.totalPaise), T.AmountBig, maxLines = 1)
                         }

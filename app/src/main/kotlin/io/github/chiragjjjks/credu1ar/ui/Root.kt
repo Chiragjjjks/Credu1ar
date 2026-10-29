@@ -1,8 +1,8 @@
 package io.github.chiragjjjks.credu1ar.ui
 
-import android.app.Activity
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -44,7 +44,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import io.github.chiragjjjks.credu1ar.core.model.Group
 
@@ -73,7 +72,7 @@ fun Credu1arRoot(model: AppModel, host: Host, pendingTxn: State<Long?>, onPendin
     }
 
     // "Hide from recents & screenshots".
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
     LaunchedEffect(s.prefs.secure) {
         if (s.prefs.secure) activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE) else activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
