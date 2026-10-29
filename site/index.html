@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="Every payment. Filed. Credu1ar is an on-device Android expense tracker. No account, no server. Your money stays your business.">
+  <title>Credu1ar — Every payment. Filed.</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script src="main.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="loader" id="loader" hidden role="dialog" aria-modal="true" aria-label="Opening Credu1ar">
+  <span class="wordmark">credu1ar<span class="brand-dot">.</span></span>
+  <div class="loader-number" aria-hidden="true">000</div>
+  <div class="loader-bottom"><span class="eyebrow">A LITTLE CLARITY, COMING IN</span><button id="skip-intro" type="button">Skip intro ↗</button></div>
+</div>
+<header class="nav wrap">
+  <a class="wordmark" href="#" aria-label="Credu1ar home">credu1ar<span class="brand-dot">.</span></a>
+  <nav aria-label="Main navigation"><a href="#how">How it works</a><a href="#demo">Live demo</a><a href="#privacy">Privacy</a></nav>
+  <a class="nav-install" href="#install">Get the app <span aria-hidden="true">↗</span></a>
+</header>
+<main id="main">
+<section class="hero wrap" aria-labelledby="hero-title" data-motion>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="hero-copy">
+    <div class="eyebrow intro-label"><span class="live-dot" aria-hidden="true"></span> YOUR MONEY. YOUR DEVICE.</div>
+    <h1 id="hero-title">Every payment.<br><span class="muted">Filed.</span></h1>
+    <p class="hero-promise">Credu1ar reads the payment SMS your phone already gets and shows where your money went. Nothing leaves your phone.</p>
+    <div class="actions"><a class="button primary" href="https://github.com/Chiragjjjks/Credu1ar/releases/latest">Download APK <span aria-hidden="true">↗</span></a><a class="button" href="https://github.com/Chiragjjjks/Credu1ar">View on GitHub <span aria-hidden="true">↗</span></a></div>
+    <p class="small">Android · Sideloaded · No account needed</p>
+  </div>
+  <div class="pulse" aria-label="Illustrative Pulse screen with fictional spending">
+    <div class="panel-top"><span class="eyebrow">PULSE / OCTOBER</span><span class="small mono">SAMPLE DATA</span></div>
+    <p class="pulse-headline">The little things added up.</p>
+    <div class="pulse-total mono">₹18,640<span>spent this month</span></div>
+    <div class="hero-chart"><div class="ring hero-ring" role="img" aria-label="Fictional spending by category. Full amounts appear in Where it went."><div><span class="eyebrow">ON DEVICE</span><strong>100<span>%</span></strong><span class="small">yours to see</span></div></div><div class="signal-lines" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+    <div class="capture-row"><span class="category-dot groceries"></span><div><strong>Zepto</strong><small>Groceries · Quick commerce</small></div><span class="mono">−₹312</span></div>
+    <div class="capture-row"><span class="category-dot food"></span><div><strong>Swiggy</strong><small>Food &amp; Drink · Food delivery</small></div><span class="mono">−₹489</span></div>
+    <div class="pulse-foot eyebrow"><span class="live-dot" aria-hidden="true"></span> LISTENING · SMS · NOTIFICATIONS</div>
+  </div>
+  <div class="hero-bottom eyebrow"><span>QUIETLY CAPTURED. CLEARLY UNDERSTOOD.</span><a href="#how">FOLLOW THE SIGNAL ↓</a></div>
+</section>
+<div class="ticker" data-motion aria-label="Fictional captures: Zepto minus 312 rupees, Swiggy minus 489 rupees, salary plus 60,000 rupees. All sample data."><div class="ticker-track" aria-hidden="true"><span>SAMPLE CAPTURES <b>↘</b> ZEPTO −₹312 <b>·</b> SWIGGY −₹489 <b>·</b> <em>↓ SALARY +₹60,000</em> <b>·</b> CORNER PROVISIONS −₹840 <b>·</b> </span><span>SAMPLE CAPTURES <b>↘</b> ZEPTO −₹312 <b>·</b> SWIGGY −₹489 <b>·</b> <em>↓ SALARY +₹60,000</em> <b>·</b> CORNER PROVISIONS −₹840 <b>·</b> </span></div></div>
+<section class="section wrap" id="how" aria-labelledby="how-title">
+  <p class="eyebrow" data-reveal>01 — HOW IT WORKS</p>
+  <h2 id="how-title" data-reveal>Your phone gets the message.<br><span class="muted">You get the picture.</span></h2>
+  <div class="steps">
+    <article data-reveal><span class="step-number mono">01 / INCOMING</span><div class="step-icon" aria-hidden="true">↘</div><h3>Listens.</h3><p>Payment SMS and notifications arrive as usual. Android wakes Credu1ar to read the signal. Non-financial messages are discarded.</p></article>
+    <article data-reveal><span class="step-number mono">02 / UNDERSTOOD</span><div class="step-icon" aria-hidden="true">≋</div><h3>Understands.</h3><p>Amount, merchant, account, date. Each payment finds its category. SMS and notification copies become one transaction.</p></article>
+    <article data-reveal><span class="step-number mono">03 / IN FOCUS</span><div class="step-icon" aria-hidden="true">◉</div><h3>Shows.</h3><p>A clear view of what came in, what went out, and where it went. Correct a category once; the merchant rule is remembered.</p></article>
+  </div>
+</section>
+<section class="section wrap" id="demo" aria-labelledby="demo-title" data-motion>
+  <div class="section-heading" data-reveal><div><p class="eyebrow">02 — LIVE DEMO</p><h2 id="demo-title">From text to transaction.</h2></div><p>Fictional messages. Real idea.<br>This demo runs entirely in your browser.</p></div>
+  <div class="demo-panel" data-reveal>
+    <div class="demo-top"><span class="eyebrow" id="sample-index">SAMPLE 01 / 06</span><button id="next-sample" type="button">Next sample <span aria-hidden="true">→</span></button></div>
+    <div class="demo-grid">
+      <div class="message-stage"><p class="eyebrow">A / THE MESSAGE</p><div class="sms"><span class="small mono">DEMO BANK · 29 OCT 2026</span><p id="sms-text">Rs.312.00 debited from A/c XX1234 on 29-10-26 to VPA zepto@axisbank.</p></div><p class="small demo-explainer">A fixed illustration of the capture flow, not the app’s bank parser.</p><div class="trace mono" id="trace" aria-hidden="true">RECEIVED → PARSED → FILED</div></div>
+      <div class="result-stage"><p class="eyebrow">B / THE SIGNAL</p><dl class="fields"><div><dt>Amount</dt><dd id="field-amount">−₹312</dd></div><div><dt>Merchant</dt><dd id="field-merchant">Zepto</dd></div><div><dt>Account tail</dt><dd id="field-account">••1234</dd></div><div><dt>Date</dt><dd id="field-date">29 Oct 2026</dd></div></dl><div class="demo-row capture-row" id="demo-row"><span class="category-dot groceries" id="demo-dot"></span><div><strong id="row-merchant">Zepto</strong><small id="row-category">Groceries · Quick commerce</small></div><span class="mono" id="row-amount">−₹312</span></div><p class="small" id="sample-note">Included in spending.</p></div>
+    </div>
+    <div class="demo-summary"><div><p class="eyebrow">C / WHERE IT LANDS</p><p id="demo-headline">This sample adds ₹312 to groceries.</p><p class="small">Each sample starts from the same fictional baseline.</p></div><div class="ring demo-ring" id="demo-ring" role="img" aria-label="Demo spending categories"><div><strong class="mono" id="demo-total">₹3,312</strong><span class="small">sample spend</span></div></div><div class="demo-bars" id="demo-bars"></div></div>
+    <p class="sr-only" id="demo-announcement" role="status" aria-live="polite"></p>
+  </div>
+  <noscript><p>The page works without JavaScript. Enable it to cycle through the six fictional demo messages.</p></noscript>
+</section>
+<section class="section wrap" id="where" aria-labelledby="where-title">
+  <p class="eyebrow" data-reveal>03 — WHERE IT WENT</p><h2 id="where-title" data-reveal>Groceries led the month.<br><span class="muted">Quick commerce led groceries.</span></h2><p class="section-intro">A fictional October, broken down. Card-bill settlements and transfers between your accounts stay out of spending totals.</p>
+  <div class="breakdown" data-reveal><div class="overview"><div class="ring overview-ring" role="img" aria-label="October sample spending, 18,640 rupees. Segments follow fixed category order; the adjacent table lists every value."><div><span class="eyebrow">OCTOBER / SAMPLE</span><strong class="mono">₹18,640</strong><span class="small">total spent</span></div></div><p class="small">One ring. Every category.<br>Fixed colour order, month after month.</p></div>
+  <div><table class="category-table"><caption class="sr-only">Fictional October spending, ranked by amount</caption><thead><tr><th scope="col">Category</th><th scope="col">Spent</th></tr></thead><tbody>
+    <tr style="--category:#D95926;--bar:100%"><th scope="row"><span class="category-dot"></span>Groceries<span class="bar"></span></th><td>₹6,400</td></tr>
+    <tr style="--category:#3987E5;--bar:65.625%"><th scope="row"><span class="category-dot"></span>Food &amp; Drink<span class="bar"></span></th><td>₹4,200</td></tr>
+    <tr style="--category:#C98500;--bar:43.75%"><th scope="row"><span class="category-dot"></span>Home &amp; Bills<span class="bar"></span></th><td>₹2,800</td></tr>
+    <tr style="--category:#199E70;--bar:32.8125%"><th scope="row"><span class="category-dot"></span>Transport<span class="bar"></span></th><td>₹2,100</td></tr>
+    <tr style="--category:#D55181;--bar:21.875%"><th scope="row"><span class="category-dot"></span>Shopping<span class="bar"></span></th><td>₹1,400</td></tr>
+    <tr style="--category:#9085E9;--bar:12.5%"><th scope="row"><span class="category-dot"></span>Fun &amp; Subscriptions<span class="bar"></span></th><td>₹800</td></tr>
+    <tr style="--category:#008300;--bar:7.8125%"><th scope="row"><span class="category-dot"></span>Health<span class="bar"></span></th><td>₹500</td></tr>
+    <tr style="--category:#E66767;--bar:6.875%"><th scope="row"><span class="category-dot"></span>People &amp; Cash<span class="bar"></span></th><td>₹440</td></tr>
+  </tbody></table></div></div>
+  <div class="grocery-split" data-reveal><div><span class="eyebrow">INSIDE GROCERIES / ₹6,400</span><h3>Same category.<br> Different habits.</h3></div><dl><div><dt>Quick commerce</dt><dd>₹3,900 <span>61%</span></dd><i style="--bar:61%" aria-hidden="true"></i></div><div><dt>Provision store</dt><dd>₹1,500 <span>23%</span></dd><i style="--bar:23%" aria-hidden="true"></i></div><div><dt>Supermarket</dt><dd>₹1,000 <span>16%</span></dd><i style="--bar:16%" aria-hidden="true"></i></div></dl></div>
+</section>
+<section class="section wrap privacy" id="privacy" aria-labelledby="privacy-title"><div data-reveal><p class="eyebrow">04 — PRIVACY</p><h2 id="privacy-title">Your money stays<br><span class="muted">your business.</span></h2><div class="privacy-mark" aria-hidden="true">[ LOCAL ONLY ]</div></div><ul data-reveal><li><strong>No account.</strong><span>No sign-up, email address or bank login.</span></li><li><strong>No server.</strong><span>Your transactions are stored on your phone. No analytics, trackers or ads.</span></li><li><strong>Everything on the phone.</strong><span>Reading, parsing and categorising happen on-device. Message text and transaction data never leave it.</span></li><li><strong>A small, explicit network boundary.</strong><span>An optional update check and exchange rates are the only network uses, with none of your data in the request. Tracking works offline.</span></li><li><strong>Open to inspection.</strong><span>Source code is public. Check the APK checksums attached to a release before installing.</span></li></ul></section>
+<section class="section wrap" id="install" aria-labelledby="install-title"><p class="eyebrow" data-reveal>05 — INSTALL</p><div class="section-heading" data-reveal><h2 id="install-title">A few taps.<br><span class="muted">Then let it listen.</span></h2><a class="button primary" href="https://github.com/Chiragjjjks/Credu1ar/releases/latest">Download APK ↗</a></div><p class="section-intro">Credu1ar is sideloaded, not on the Play Store. The button opens GitHub Releases; an APK is available once a release is published.</p><ol class="install-steps"><li data-reveal><h3>Get the APK.</h3><p>Download from GitHub Releases, compare its checksum with the published checksum, and open it. Allow your browser or file manager to install unknown apps when Android asks.</p></li><li data-reveal><h3>Unlock restricted settings.</h3><p>On Android 13+, sideloaded apps may need this before notification access can be enabled: <strong>Settings → Apps → Credu1ar → three-dot menu → Allow restricted settings.</strong> Wording can vary by phone.</p></li><li data-reveal><h3>Allow SMS access.</h3><p>Open Credu1ar and grant SMS permission when prompted. It reads payment alerts and catches up on messages already in your inbox.</p></li><li data-reveal><h3>Enable notification access.</h3><p>Follow the in-app link to Android’s notification access settings and enable Credu1ar. This adds Google Messages RCS and payment-app alerts. You can also explore with sample data first.</p></li></ol></section>
+<section class="section wrap faq" aria-labelledby="faq-title"><div data-reveal><p class="eyebrow">A FEW MORE SIGNALS</p><h2 id="faq-title">Good questions.</h2></div><div data-reveal>
+<details><summary>Is it always running?</summary><p>No foreground service or permanent notification. Android wakes the app for incoming SMS and notification events. A catch-up scan on wake checks for missed SMS. Phone battery settings can affect capture; Diagnostics helps you check it.</p></details>
+<details><summary>What about Google Messages RCS?</summary><p>RCS messages are not SMS, so they use the notification path. Enable notification access and let Google Messages show notification text. Hidden or truncated text can limit what Credu1ar can read.</p></details>
+<details><summary>Does it work offline?</summary><p>Yes. Capturing messages, parsing, categorising and viewing spending all work offline. Update checks and exchange rates need a connection.</p></details>
+<details><summary>Which banks does it understand?</summary><p>It uses bank-format rules and a generic fallback for financial messages. Coverage depends on the message format, not just the bank name. Financial messages it cannot confidently parse go to Needs review. There is no promise of support for every bank or alert.</p></details>
+<details><summary>Is it on the Play Store?</summary><p>No. Credu1ar is a personal Android app distributed as a sideloaded APK through GitHub Releases.</p></details>
+<details><summary>Will a card-bill payment count twice?</summary><p>Card-bill settlements, self transfers and investments are tagged as not spending and excluded from spend totals. The live demo includes a fictional card settlement so you can see the distinction.</p></details>
+</div></section>
+<div class="closing wrap" data-reveal><p class="eyebrow">LESS GUESSING. MORE CLARITY.</p><p>Every payment.<span class="muted"> Filed.</span></p><a class="button" href="#install">Make sense of yours <span aria-hidden="true">↗</span></a></div>
+</main>
+<footer class="wrap"><a class="wordmark" href="#">credu1ar<span class="brand-dot">.</span></a><p>Not affiliated with any bank or payment app.</p><a href="https://github.com/Chiragjjjks/Credu1ar/blob/main/LICENSE">Apache-2.0 ↗</a><a href="https://github.com/Chiragjjjks/Credu1ar">GitHub ↗</a></footer>
+</body>
+</html>
