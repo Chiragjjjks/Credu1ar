@@ -4,6 +4,8 @@
 
 Agents: start with `AGENTS.md` (current state, rules, code map). This file is the **why and the roadmap**. The day-by-day log lives in `plans/`.
 
+**Status (2026-10-29):** v0.1.0 is built and verified on an emulator (1.32 MB signed APK, 26 JVM tests, end-to-end SMS smoke test). It is not released and has not been tried on a real phone: see `docs/PHONE-TEST.md`.
+
 ---
 
 ## 1. The problem, in plain words

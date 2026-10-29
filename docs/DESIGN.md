@@ -107,5 +107,20 @@ Bottom navigation is a floating hairline pill with four mono labels: `PULSE · L
 - Charts are custom `Canvas` drawings (no chart library): smaller APK and full control. Animations run only while the screen is resumed.
 - Large font scale (up to 200%) must not truncate amounts; amounts never wrap.
 
-## 6. Landing site (`site/`)
+## 6. Implementation status (v0.1.0)
+
+| Element | Status |
+|---|---|
+| Tokens (surfaces, text, brand, validated category palette), Geist + Geist Mono | **built** (`ui/Tokens.kt`) |
+| Intro: ring draws itself + 000→100 counter + wipe | **built** (`ui/Intro.kt`), once per cold start, tap to skip |
+| Mono numbered eyebrows, live dot, live strip, floating nav pill | **built** |
+| Hero count-up, tick-meter pace gauge with forecast marker, fixed-order category ring, ranked bars | **built** (`ui/Charts.kt`) |
+| Spec ticker band (recent captures) | **built**, scrolls only while composed |
+| Ledger (search, filters, sticky day headers), Insights (day-by-day, leaks, movers, recurring, rhythm heatmap), grouped Review, System | **built** |
+| Film grain overlay on the Pulse hero | **not built** (v0.2) |
+| Haptics, "remove animations" handling | **not built** (v0.2): animations are short and only run while visible |
+| Large-font (200%) and TalkBack pass | **not tested** |
+| Light theme | not planned: the identity is black |
+
+## 7. Landing site (`site/`)
 Static HTML/CSS/JS, no build step, same tokens, hero "Every payment. Filed.", live demo that animates a fake SMS into a categorised row. Not deployed until the owner enables GitHub Pages.

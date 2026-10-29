@@ -14,7 +14,7 @@
 - [x] Emulator proof: real multi-part SMS PDU → row appears; screenshots reviewed and 8 UI/data bugs fixed
 - [x] CI workflow + release notes draft (no tag)
 - [x] Delegate to Codex: landing site, independent parser review (running)
-- [ ] Push `main` to `git@github-personal:Chiragjjjks/Credu1ar.git`
+- [x] Push `main` to `git@github-personal:Chiragjjjks/Credu1ar.git` (audited first: no keys, passwords, personal email or real SMS tracked)
 
 ## What is happening now
 Wrapping up: docs and journal written; waiting on the two Codex reports (site, adversarial parser fixtures) before the first push.
@@ -23,7 +23,8 @@ Wrapping up: docs and journal written; waiting on the two Codex reports (site, a
 - `59b86b9` core: parser, merchant directory (~150 brands), categoriser, insights, sample data, 24 tests.
 - `6049ef0` app: capture pipeline + debug-only PDU injector + scripts.
 - `4addbbc` app: Signal Noir UI.
-- Uncommitted at time of writing: lint fixes (API 26 safety), honest "SAMPLE DATA · NOT LISTENING" strip, review copy, CI workflow, scripts, docs (ARCHITECTURE, PARSING, CATEGORIES, PHONE-TEST), release notes v0.1.0, two project skills.
+- `b4dba93` CI workflow, scripts (`check-version`, `android-smoke`), docs (ARCHITECTURE, PARSING, CATEGORIES, PHONE-TEST), release notes v0.1.0, project skills, lint fixes (API 26 safety), honest "SAMPLE DATA · NOT LISTENING" strip, review grouped by payee.
+- Pushed `main` to `git@github-personal:Chiragjjjks/Credu1ar.git` (public repo). First CI run `40914429040` in progress at time of writing.
 
 ## Decisions
 - Native Kotlin + Compose, two modules (`:core` pure JVM, `:app`). Smallest APK, instant wake-ups, fast parser tests. (ADR-001/002)
