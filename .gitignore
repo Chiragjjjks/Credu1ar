@@ -1,0 +1,29 @@
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# Secrets / local config (never commit)
+*.jks
+*.keystore
+key.properties
+.env
+local.properties
+
+# Gradle / Android
+.gradle/
+.kotlin/
+build/
+captures/
+*.apk
+*.aab
+
+# Test output and local scratch
+test-results/
+out/
+tmp/
+node_modules/
+__pycache__/
+*.pyc
