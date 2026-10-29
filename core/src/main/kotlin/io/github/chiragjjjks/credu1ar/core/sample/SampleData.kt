@@ -90,7 +90,7 @@ object SampleData {
 
             // ---- fixed monthly rhythm ----
             at(1, 9, 12)?.let { t -> push("VM-HDFCBK-S", "UPDATE: INR 85,000.00 credited to HDFC Bank A/c XX1234 on ${t.format(dDash)} from NEFT-ACME TECHNOLOGIES SALARY. Avl bal INR 1,20,000.00", t) }
-            at(2, 10, 5)?.let { upi(s(), 2_800_000, "Landlord Sharma", "landlord.sharma@ybl", it) }
+            at(2, 10, 5)?.let { upi(s(), 2_800_000, "NoBroker Rent", "nobroker.rent@icici", it) }
             at(3, 11, 20)?.let { upi(s(), 500_000, "Groww Invest", "groww.sip@icici", it) }
             at(5, 8, 40)?.let { upi(s(), 105_000, "ACT Fibernet", "actfibernet@axisbank", it) }
             at(6, 9, 15)?.let { upi(s(), 39_900, "Airtel Prepaid", "airtel@icici", it) }

@@ -66,6 +66,7 @@ class SampleAndInsightsTest {
         assertTrue(leaks.any { it.category == Category.QUICK_COMMERCE && it.isCategoryLevel && it.count >= 15 }, "no quick-commerce leak: $leaks")
         assertTrue(leaks.any { it.category == Category.FOOD_DELIVERY }, "no food-delivery leak")
         assertEquals(leaks.sortedByDescending { it.totalPaise }, leaks)
+        assertTrue(leaks.all { it.avgPaise % 100 == 0L }, "leak averages must be whole rupees: ${leaks.map { it.avgPaise }}")
     }
 
     @Test fun recurringDetectsSubscriptionsAndBills() {
@@ -78,7 +79,7 @@ class SampleAndInsightsTest {
         val review = txns.filter { it.needsReview }
         assertTrue(review.any { it.category == Category.SENT_TO_PEOPLE }, "no person payments queued for review")
         // "RAHUL S" / "PRIYA M" use initials; they are still people, not "uncategorised".
-        listOf("Rahul S", "Priya M", "Landlord Sharma").forEach { n ->
+        listOf("Rahul S", "Priya M").forEach { n ->
             assertEquals(Category.SENT_TO_PEOPLE, txns.first { it.merchantName == n }.category, n)
         }
         assertTrue(review.all { it.confidence < 0.65f })
@@ -92,10 +93,29 @@ class SampleAndInsightsTest {
         assertTrue(txns.none { it.merchantName == "Unknown" }, "every sample payee should be named: ${txns.filter { it.merchantName == "Unknown" }}")
     }
 
-    @Test fun monthlyRentToAPersonIsRecognisedAsRecurring() {
-        val rent = Insights.recurring(txns, now).firstOrNull { it.name == "Landlord Sharma" }
-        assertNotNull(rent, "monthly ₹28,000 to the same person should be recurring")
+    @Test fun monthlyRentIsRecurringAndFiledAsRent() {
+        val rent = Insights.recurring(txns, now).firstOrNull { it.name == "NoBroker" }
+        assertNotNull(rent, "monthly rent via NoBroker should be recurring")
         assertEquals(2_800_000L, rent.amountPaise)
+        assertEquals(Category.RENT, rent.category)
+    }
+
+    @Test fun sameAmountToTheSamePersonEveryMonthIsRecurringToo() {
+        // A landlord paid by plain UPI looks like "Sent to people", but the rhythm gives it away.
+        fun payment(id: Long, month: Int) = Txn(
+            id, LocalDateTime.of(2026, month, 2, 10, 0).atZone(ist).toInstant().toEpochMilli(), io.github.chiragjjjks.credu1ar.core.model.Direction.DEBIT,
+            2_800_000, "landlord_sharma", "Landlord Sharma", Category.SENT_TO_PEOPLE, 0.5f,
+            io.github.chiragjjjks.credu1ar.core.model.Instrument.UPI, null, "1234", true,
+        )
+        val rec = Insights.recurring(listOf(payment(1, 8), payment(2, 9), payment(3, 10)), now)
+        assertEquals(listOf("Landlord Sharma"), rec.map { it.name })
+        assertEquals(30, rec.single().cadenceDays)
+    }
+
+    @Test fun paceFiguresAreWholeRupees() {
+        val oct = Insights.monthSummary(txns, YearMonth.of(2026, 10), now)
+        assertEquals(0L, oct.forecastPaise % 100, "forecast must not show paise")
+        assertEquals(0L, oct.dailyBurnPaise % 100, "daily burn must not show paise")
     }
 
     @Test fun forecastProjectsThisMonthOnlyWhileItIsRunning() {

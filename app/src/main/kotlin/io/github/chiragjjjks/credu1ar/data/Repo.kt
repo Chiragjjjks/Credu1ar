@@ -29,7 +29,8 @@ data class Unparsed(val id: Long, val receivedAtMillis: Long, val sender: String
 /** The only class that talks SQL. Writes bump [version] so the UI knows to recompute. */
 class Repo(private val db: Db) {
     val version = MutableStateFlow(0L)
-    private fun bump() { version.value = System.nanoTime() }
+    /** Tell the UI the data changed (also called after bulk imports). */
+    fun bump() { version.value = System.nanoTime() }
 
     // ------------------------------------------------------------------------------------------------ rules
 

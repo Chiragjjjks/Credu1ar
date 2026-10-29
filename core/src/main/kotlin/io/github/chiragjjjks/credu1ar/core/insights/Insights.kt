@@ -17,6 +17,9 @@ object Insights {
     private fun Txn.date(zone: ZoneId = IST): LocalDate = Instant.ofEpochMilli(occurredAtMillis).atZone(zone).toLocalDate()
     private fun Txn.month(): YearMonth = YearMonth.from(date())
 
+    /** Estimates and averages are shown in whole rupees, never paise. */
+    private fun wholeRupees(p: Long) = (p + 50) / 100 * 100
+
     // ------------------------------------------------------------------------------------------------ month summary
 
     data class GroupTotal(val group: Group, val paise: Long, val count: Int)
@@ -70,8 +73,9 @@ object Insights {
             .map { (k, l) -> MerchantTotal(k, l.first().merchantName, l.maxByOrNull { it.amountPaise }!!.category, l.sumOf { it.amountPaise }, l.size) }
             .sortedByDescending { it.paise }.take(8)
 
-        val burn = if (daysElapsed > 0) spent / daysElapsed else 0
-        val forecast = if (thisMonthNow && daysElapsed in 3 until daysInMonth) spent * daysInMonth / daysElapsed else spent
+        // Pace figures are estimates: whole rupees, never paise.
+        val burn = if (daysElapsed > 0) wholeRupees(spent / daysElapsed) else 0
+        val forecast = if (thisMonthNow && daysElapsed in 3 until daysInMonth) wholeRupees(spent * daysInMonth / daysElapsed) else spent
 
         val prev = month.minusMonths(1)
         val prevSpend = txns.filter { it.isSpend && YearMonth.from(it.date(zone)) == prev }
@@ -130,10 +134,10 @@ object Insights {
         val spend = txns.filter { it.isSpend && YearMonth.from(it.date(zone)) == month }
         val habits = spend.filter { it.category in habitCategories }.groupBy { it.category }
             .filter { it.value.size >= 5 }
-            .map { (c, l) -> Leak(c.label, c, l.size, l.sumOf { it.amountPaise } / l.size, l.sumOf { it.amountPaise }, true) }
+            .map { (c, l) -> Leak(c.label, c, l.size, wholeRupees(l.sumOf { it.amountPaise } / l.size), l.sumOf { it.amountPaise }, true) }
         val others = spend.filter { it.category !in habitCategories }.groupBy { it.merchantKey }
             .filter { (_, l) -> l.size >= 5 && l.sumOf { it.amountPaise } / l.size <= 50_000 }
-            .map { (_, l) -> Leak(l.first().merchantName, l.first().category, l.size, l.sumOf { it.amountPaise } / l.size, l.sumOf { it.amountPaise }, false) }
+            .map { (_, l) -> Leak(l.first().merchantName, l.first().category, l.size, wholeRupees(l.sumOf { it.amountPaise } / l.size), l.sumOf { it.amountPaise }, false) }
         return (habits + others).sortedByDescending { it.totalPaise }
     }
 

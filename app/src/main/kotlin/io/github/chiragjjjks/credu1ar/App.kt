@@ -18,6 +18,13 @@ object Graph {
         repo ?: Repo(Db(context.applicationContext)).also { repo = it }
     }
 
+    @Volatile private var model: io.github.chiragjjjks.credu1ar.ui.AppModel? = null
+
+    /** UI state holder; lives as long as the process so rotation never recomputes everything. */
+    fun model(context: Context): io.github.chiragjjjks.credu1ar.ui.AppModel = model ?: synchronized(this) {
+        model ?: io.github.chiragjjjks.credu1ar.ui.AppModel(context.applicationContext).also { model = it }
+    }
+
     fun settings(context: Context): Settings = prefs ?: synchronized(this) {
         prefs ?: Settings(context.applicationContext.getSharedPreferences("settings", Context.MODE_PRIVATE)).also { prefs = it }
     }
