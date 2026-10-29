@@ -18,7 +18,7 @@ Android only (sideloaded APK, Android 8+). Personal project, not affiliated with
 - **Design language:** [`docs/DESIGN.md`](docs/DESIGN.md)
 - **Day-by-day log:** [`plans/`](plans/README.md)
 - **For coding agents:** [`AGENTS.md`](AGENTS.md)
-- **Landing page:** [`site/`](site/README.md) (publication approved; one-time Pages setup pending)
+- **Website:** [chiragjjjks.github.io/Credu1ar](https://chiragjjjks.github.io/Credu1ar/) · [source and deployment](site/README.md)
 
 ## Install
 

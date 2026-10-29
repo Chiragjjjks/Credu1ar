@@ -43,11 +43,11 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 
 **Next version planned:** [`plans/v0.2.0/plan.md`](plans/v0.2.0/plan.md) tracks rules editor → merchant pages → category budgets, verification, release dependencies and saved follow-ups. Planning is done; feature implementation has not started.
 
-**Landing site:** owner approved Pages publication on 2026-10-29 ("yessss"). `.github/workflows/pages.yml` is prepared to publish only `site/`. One-time setup is waiting on personal-account access: Settings → Pages → Source = GitHub Actions, then Actions → Landing page → Run workflow. The CLI work account is read-only and the available browser is signed out. Expected URL: `https://chiragjjjks.github.io/Credu1ar/`; do not claim it is live until deployment and HTTP checks succeed.
+**Landing site LIVE:** [chiragjjjks.github.io/Credu1ar](https://chiragjjjks.github.io/Credu1ar/). Owner approved publication and enabled Pages; [deployment 40920360529](https://github.com/Chiragjjjks/Credu1ar/actions/runs/40920360529) succeeded from `affc533`. HTML, CSS, JS, favicon and both fonts return HTTP 200 and match `site/` byte for byte; APK buttons resolve to v0.1.0. `.github/workflows/pages.yml` publishes only `site/` automatically when the site or workflow changes.
 
 **Known sharp edges:** the emulator console `sms send` does not deliver on this image, so use `scripts/inject.sh` (debug build only). `adb shell` re-parses quotes: always go through `scripts/inject.sh`. Launch the emulator detached (`start_new_session`) or the harness kills it when the command returns.
 
-**Delegated to Codex (gpt-6.1-sol, worktrees):** (1) landing page `site/`: done, reviewed and merged (`121d348`), not deployed; (2) adversarial parser fixtures with a known-failures ratchet: done, reviewed, merged, and all 36 failures it found are fixed. See `plans/week-01/day-1/planned.md` → *Delegated*.
+**Delegated to Codex (gpt-6.1-sol, worktrees):** (1) landing page `site/`: done, reviewed, merged (`121d348`) and now deployed (URL above); (2) adversarial parser fixtures with a known-failures ratchet: done, reviewed, merged, and all 36 failures it found are fixed. See `plans/week-01/day-1/planned.md` → *Delegated*.
 
 **Reviewing delegated work:** do not trust the summary. Check `git diff --stat` for scope, grep for secrets/external calls, run the tests, and look at screenshots yourself. A first look can mislead (headless Chrome is at least ~500 px wide, so test narrow layouts through a sized iframe).
 
@@ -55,8 +55,7 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 
 1. Owner: install v0.1.0, run `docs/PHONE-TEST.md`, paste back the Diagnostics report; add real formats as fixtures before changing parser rules.
 2. Owner: set the four CI signing secrets (`docs/ARCHITECTURE.md`) before the next release. The published v0.1.0 uses a temporary debug key; moving to the private key requires uninstall/reinstall (export first; re-import SMS afterward).
-3. Finish the approved Pages publication: personal account enables Source = GitHub Actions and runs the Landing page workflow; verify the deployed URL/assets, then update the pending state above.
-4. Follow [`plans/v0.2.0/plan.md`](plans/v0.2.0/plan.md): start with the rules editor, then merchant pages and category budgets. Keep statuses current; recurring calendar and other follow-ups are recorded there. Later releases need fresh approval.
+3. Follow [`plans/v0.2.0/plan.md`](plans/v0.2.0/plan.md): start with the rules editor, then merchant pages and category budgets. Keep statuses current; recurring calendar and other follow-ups are recorded there. Later releases need fresh approval.
 
 ## Rules (hard)
 
@@ -104,7 +103,7 @@ adb emu sms send HDFCBK "Rs.450.00 debited from A/c XX1234 on 29-10-26 to VPA ze
 | `scripts/` | `check-version.sh`, `android-smoke.sh` (CI), `inject.sh` + `dump-db.sh` (debug-build emulator tools) |
 | `.github/workflows/android.yml` | CI + release |
 | `.claude/skills/` | Project skills (add a bank parser, cut a release) |
-| `site/` | Landing page (built by Codex in a worktree; not deployed) |
+| `site/` | Live landing page, deployed through `.github/workflows/pages.yml` |
 
 ## Delegating to Codex
 

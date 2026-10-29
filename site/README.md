@@ -20,13 +20,18 @@ The owner approved GitHub Pages publication on 2026-10-29. The deployment workfl
 is `.github/workflows/pages.yml`; it uploads only `site/` on changes to this folder
 or the workflow, and can also be run manually.
 
-**Setup pending:** while signed in as `Chiragjjjks`, open repository **Settings →
-Pages → Build and deployment → Source → GitHub Actions**. Then run **Actions →
-Landing page → Run workflow**. The CLI on this Mac is a read-only work account
-and cannot enable this setting. A workflow token cannot enable Pages itself.
+**Live:** https://chiragjjjks.github.io/Credu1ar/
 
-Expected URL after a successful deployment: **https://chiragjjjks.github.io/Credu1ar/**.
-This is not confirmed live yet. The APK buttons link to the published latest release.
+The owner enabled **Settings → Pages → Source → GitHub Actions** and ran the
+workflow. [Deployment 40920360529](https://github.com/Chiragjjjks/Credu1ar/actions/runs/40920360529)
+succeeded from `affc533`. Checked the public URL, HTML, CSS, JavaScript, favicon
+and both fonts: HTTP 200, byte-for-byte matches to `site/`. Both APK buttons resolve
+to the published v0.1.0 release. HTTPS is enforced. Existing visual/interaction
+checks are recorded below; this publication changed no UI.
+
+Future changes to `site/` on `main` deploy automatically. To redeploy manually,
+use **Actions → Landing page → Run workflow** while signed in to the personal
+account (the CLI work account has read-only access).
 
 ## Illustrations and motion
 

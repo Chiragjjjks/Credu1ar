@@ -1,10 +1,10 @@
 # Week 1 · Day 1 — 2026-10-29 (Thursday)
 
 **Version in progress:** v0.1.0 (last tagged: v0.1.0)
-**Status:** in progress (v0.1.0 published; approved Pages setup needs personal-account access)
+**Status:** done (v0.1.0 and landing site published; v0.2.0 checklist saved)
 
 ## Plan for today
-- [ ] Publish the approved landing site through GitHub Pages and verify its live URL.
+- [x] Publish the approved landing site through GitHub Pages and verify its live URL.
 - [x] Save a brief v0.2.0 plan in its own directory, with task statuses and links for the next session.
 - [x] Continuation: inspect Claude's final commit and exact-commit CI; finish the approved v0.1.0 release, verify published assets, and record the outcome.
 - [x] Research: sibling repos (sasta, openscribe, metronudge), Downmix UI reference, SMS/RCS/sideload constraints, open-source references
@@ -20,7 +20,7 @@
 - [x] Push `main` to `git@github-personal:Chiragjjjks/Credu1ar.git` (audited first: no keys, passwords, personal email or real SMS tracked)
 
 ## What is happening now
-v0.1.0 is published from `2029153`. Exact-commit main CI and the tag workflow passed; the downloaded release APK matches the tested artifact. Release handoff and next-version checklist are saved. Preparing the approved Pages deployment; the personal account must enable Pages before the live URL can be verified.
+v0.1.0 is published from `2029153`. Exact-commit main CI and the tag workflow passed; the downloaded release APK matches the tested artifact. Release handoff and next-version checklist are saved. The landing site is now published and verified; next implementation starts at `plans/v0.2.0/plan.md`.
 
 ## Done
 - `59b86b9` core: parser, merchant directory (~150 brands), categoriser, insights, sample data, 24 tests.
@@ -57,11 +57,11 @@ v0.1.0 is published from `2029153`. Exact-commit main CI and the tag workflow pa
 
 ## Blocked / waiting on owner
 - Real-phone test (`docs/PHONE-TEST.md`) — only the owner can do it.
-- CI signing secrets (`CREDU1AR_KEYSTORE_BASE64` etc.) before the next release; GitHub Pages for `site/` still needs approval. v0.1.0 approval was already given and the tag is now published.
+- CI signing secrets (`CREDU1AR_KEYSTORE_BASE64` etc.) before the next release. v0.1.0 and Pages were approved and are now published.
 - Confirm the app/package name (`Credu1ar`, `io.github.chiragjjjks.credu1ar`).
 
 ## Next
-Owner: install v0.1.0 and run `docs/PHONE-TEST.md`; return Diagnostics and missed formats. Set CI signing secrets before a later release; decide about Pages. Then continue the v0.2.0 roadmap.
+Owner: install v0.1.0 and run `docs/PHONE-TEST.md`; return Diagnostics and missed formats. Set CI signing secrets before a later release. Continue the v0.2.0 checklist; Pages publication is complete.
 
 ## Continuation — 2026-10-29, Codex following Claude's release handoff
 
@@ -109,3 +109,15 @@ Owner: install v0.1.0 and run `docs/PHONE-TEST.md`; return Diagnostics and misse
 **Blocked / waiting on owner:** the CLI account has `pull=true`, `push=false`, `admin=false`; Pages is disabled. The available browser shows Sign in, so no authenticated personal settings session exists. The official configure-pages action documents that enabling Pages needs a token other than GITHUB_TOKEN. Owner must open Settings → Pages → Source = GitHub Actions and run Actions → Landing page → Run workflow.
 
 **Next:** verify a successful Pages deployment and HTTP 200 for the expected URL `https://chiragjjjks.github.io/Credu1ar/` plus CSS/JS/fonts and the APK link. Update publication status to DONE only after those checks.
+
+### Pages verification complete — 2026-10-29
+
+**Done:** owner confirmed "Enabled Pages and ran workflow". [Deployment 40920360529](https://github.com/Chiragjjjks/Credu1ar/actions/runs/40920360529) succeeded from `affc533`; live URL: **https://chiragjjjks.github.io/Credu1ar/**. Updated the current handoff, README, site deployment instructions and version checklist to mark publication DONE. The initial run `40919987007` had failed at Configure Pages before the owner enabled the setting; that blocker is now resolved.
+
+**Decisions:** no further hosting or UI changes; the existing workflow handles future site updates.
+
+**Verified how:** Pages API confirms `build_type=workflow` and HTTPS enforced. Python HTTP checks verified 200 responses and exact byte matches for index.html, styles.css, main.js, favicon.svg and both bundled fonts. Both APK buttons follow GitHub Releases/latest to v0.1.0 (HTTP 200). The web fetch tool could not access this URL, so verification used direct HTTP requests instead. No fresh browser visual check was needed: published assets match the already-reviewed site exactly.
+
+**Blocked / waiting on owner:** no remaining Pages blocker. Real-phone test and future signing secrets remain separate app tasks.
+
+**Next:** start the v0.2.0 rules editor from `plans/v0.2.0/plan.md` in the next implementation session.
