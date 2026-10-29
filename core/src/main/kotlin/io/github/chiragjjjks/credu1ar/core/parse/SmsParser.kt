@@ -84,12 +84,14 @@ object SmsParser {
     private val BOILERPLATE = Regex("""(?i)\b(?:not you|if not you|if you did not|if not done by you|not done by you|call\s+\d|sms block|to block|dial\s+\d|download|avl\.?\s*(?:bal|lmt|limit)|available|for dispute|trxn\.? not|report at|bal(?:ance)?\s*[:\-]?\s*(?:rs|inr|₹))\b""")
 
     private const val NAME = """([A-Za-z0-9][A-Za-z0-9&'.\-@ ]{1,38}?)"""
-    private const val END = """(?=\s+(?:on|via|ref|refno|upi|txn|using|from|dated|dt|date|info|avl|bal|not|if|call|sms|block|rrn|utr|thru|through|for|id|successful|successfully|is|was|has|have|will|done|completed|credited|debited|and)\b|\s*[|(\[;,]|\.\s|\.$|\s+\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\s*$)"""
+    private const val END = """(?=\s+on\s+\d|\s+from\s+(?:a/c|acct?|account|your|vpa)\b|\s+(?:via|ref|refno|upi|txn|using|dated|dt|date|info|avl|bal|not|if|call|sms|block|rrn|utr|thru|through|for|id|successful|successfully|is|was|has|have|will|done|completed|credited|debited|and)\b|\s*[|(\[;,]|\.\s|\.$|\s+\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\s*$)"""
     private const val BAD_START = """(?!vpa\b|a/c\b|acct\b|account\b|card\b|your\b|the\b|you\b|a\b|an\b|date\b|bank\b|upi\b|self\b|rs\b|inr\b|₹|\d{1,2}[-/]|\d+\s)"""
     private val DEBIT_PAYEE = Regex("""(?i)\b(?:trf to|transfer to|paid to|sent to|to|at|towards|merchant)\s+$BAD_START$NAME$END""")
     private val CREDIT_PAYEE = Regex("""(?i)\b(?:from|by)\s+$BAD_START$NAME$END""")
     private val ON_PAYEE = Regex("""(?i)\bon\s+$BAD_START$NAME$END""")
     private val SEMI_PAYEE = Regex("""(?i);\s*([A-Za-z0-9&'.\- ]{2,40}?)\s+credited""")
+    /** "SWIGGY credited; Rs 489 debited from your A/c ..." */
+    private val LEAD_CREDITED = Regex("""(?i)(?:^|[|;]\s*)([A-Za-z][A-Za-z0-9&'.\- ]{1,38}?)\s+credited\s*[;,]""")
 
     fun parse(sig: RawSignal): ParseResult {
         if (sig.source == Source.SMS && SenderDirectory.isPhoneNumber(sig.sender)) return ParseResult.NotFinancial
@@ -126,6 +128,7 @@ object SmsParser {
         }
         val (amountPaise, amountStart, amountEnd) = amountMatch
         if (amountPaise <= 0) return ParseResult.NotFinancial
+        if (holdsSeveralPayments(text, paymentAmounts(text))) return ParseResult.Unparsed("more than one payment in one message")
 
         // Promo wording rejects the message when it sits at or before the sentence that holds the amount ("Cashback up to
         // Rs 500 credited ...") or when no account is named at all. A marketing footer AFTER a real, account-bearing debit
@@ -184,14 +187,26 @@ object SmsParser {
 
     private data class Amt(val paise: Long, val start: Int, val end: Int)
 
-    private fun chooseAmount(text: String): Amt? {
+    /** Every currency amount that is not a balance, limit or due figure, in order. */
+    private fun paymentAmounts(text: String): List<Amt> {
         val balanceSpans = BALANCE_SPAN.findAll(text).map { it.range }.toList()
-        for (m in AMOUNT.findAll(text)) {
-            if (balanceSpans.any { m.range.first in it }) continue
-            val ctx = text.substring(maxOf(0, m.range.first - 26), m.range.first)
-            if (BALANCE_CTX.containsMatchIn(ctx)) continue
-            return Amt(toPaise(m.groupValues[1]), m.range.first, m.range.last + 1)
-        }
+        return AMOUNT.findAll(text).filter { m ->
+            balanceSpans.none { m.range.first in it } &&
+                !BALANCE_CTX.containsMatchIn(text.substring(maxOf(0, m.range.first - 26), m.range.first))
+        }.map { m -> Amt(toPaise(m.groupValues[1]), m.range.first, m.range.last + 1) }.toList()
+    }
+
+    /** "Rs 150 debited to ZEPTO ...; Rs 275 debited to SWIGGY ...": two different amounts, each next to its own verb. */
+    private fun holdsSeveralPayments(text: String, amounts: List<Amt>): Boolean {
+        if (amounts.map { it.paise }.distinct().size < 2) return false
+        val verbs = STRONG_CUE.findAll(text).toList()
+        fun gap(v: MatchResult, a: Amt) = if (v.range.last < a.start) a.start - v.range.last else if (v.range.first > a.end) v.range.first - a.end else 0
+        val owners = amounts.map { a -> verbs.minByOrNull { gap(it, a) }?.takeIf { gap(it, a) <= 45 }?.range?.first }
+        return owners.all { it != null } && owners.toSet().size == amounts.size
+    }
+
+    private fun chooseAmount(text: String): Amt? {
+        paymentAmounts(text).firstOrNull()?.let { return it }
         // SBI style: "debited by 312.0" with no currency symbol.
         VERB_AMOUNT.find(text)?.let { return Amt(toPaise(it.groupValues[1]), it.range.first, it.range.last + 1) }
         return null
@@ -243,6 +258,7 @@ object SmsParser {
         primary.find(core)?.let { m -> cleanName(m.groupValues[1])?.let { return it to PayeeKind.UNKNOWN } }
         if (direction == Direction.DEBIT) {
             SEMI_PAYEE.find(core)?.let { m -> cleanName(m.groupValues[1])?.let { return it to PayeeKind.UNKNOWN } }
+            LEAD_CREDITED.find(core)?.let { m -> cleanName(m.groupValues[1])?.let { return it to PayeeKind.UNKNOWN } }
             ON_PAYEE.find(core)?.let { m -> cleanName(m.groupValues[1])?.let { return it to PayeeKind.UNKNOWN } }
             // "...towards EMI for loan 123 (BAJAJ FINANCE)": the payee is the bracketed name.
             for (m in PAREN_PAYEE.findAll(core)) {
@@ -275,6 +291,7 @@ object SmsParser {
         if (Regex("""\b(?:sip|mutual fund|ppf|nps|demat)\b""").containsMatchIn(lower)) add("invest")
         if (Regex("""\b(?:own|self|same)\s+(?:account|a/c)\b""").containsMatchIn(lower)) add("self")
         if (Regex("""\binterest\b|int\.?\s*pd|int\.?\s*credit""").containsMatchIn(lower)) add("interest")
+        if (Regex("""\b(?:merchandise|store\s+order)\b""").containsMatchIn(lower)) add("merch")
         if (instrument == Instrument.ATM) add("atm")
         if (Regex("""\bmandate\b|standing instruction|autopay""").containsMatchIn(lower)) add("mandate")
         if (direction == Direction.CREDIT && lower.contains("upi")) add("upi_in")

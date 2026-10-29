@@ -190,6 +190,11 @@ object MerchantDirectory {
         b("NPS", INVESTMENTS, "national pension", "nps trust"),
     )
 
+    /** What may follow a brand name when a handle runs words together ("zepto"+"now", "amazon"+"pay"). "amazonia" is not Amazon. */
+    private val brandSuffixes = setOf("now", "pay", "india", "seller", "sellers", "retail", "online", "store", "stores", "shop", "app", "upi", "payments", "milk", "fresh", "mart", "cabs", "food", "foods", "minutes")
+
+    private fun runsTogether(word: String, alias: String) = word == alias || (word.startsWith(alias) && word.removePrefix(alias) in brandSuffixes)
+
     private val noiseTokens = setOf(
         "payu", "razorpay", "razorpayx", "billdesk", "paytm", "upi", "pay", "cashfree", "juspay", "rzp", "ccavenue",
         "pg", "online", "store", "stores", "merchant", "qr", "bharatpe", "ybl", "okaxis", "oksbi", "okhdfcbank",
@@ -221,8 +226,8 @@ object MerchantDirectory {
                 val glued = alias.replace(" ", "")
                 val hit = if (alias.contains(' ')) {
                     // A phrase also matches when the handle runs it together: "apollopharmacy", "swiggyinstamart".
-                    padded.contains(" $alias ") || (glued.length >= 7 && words.any { w -> w == glued || w.startsWith(glued) })
-                } else words.any { w -> w == alias || (alias.length >= 5 && w.startsWith(alias)) }
+                    padded.contains(" $alias ") || (glued.length >= 7 && words.any { w -> runsTogether(w, glued) })
+                } else words.any { w -> w == alias || (alias.length >= 5 && runsTogether(w, alias)) }
                 if (hit) {
                     val score = alias.length
                     if (best == null || score > best.second) best = brand to score

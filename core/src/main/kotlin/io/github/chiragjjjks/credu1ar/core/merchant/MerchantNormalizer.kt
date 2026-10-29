@@ -23,7 +23,7 @@ object MerchantNormalizer {
         val vpaWords = MerchantDirectory.tokens(vpaLocal)
 
         val display = when {
-            words.isNotEmpty() -> words.take(5).joinToString(" ") { it.titleCase() }
+            words.isNotEmpty() -> words.take(6).joinToString(" ") { it.titleCase() }
             vpaWords.isNotEmpty() -> vpaWords.take(3).joinToString(" ") { it.titleCase() }
             else -> "Unknown"
         }

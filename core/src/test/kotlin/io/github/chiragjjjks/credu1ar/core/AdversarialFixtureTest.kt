@@ -17,13 +17,6 @@ class AdversarialFixtureTest {
      * This is a debt inventory, not a list of fixtures to skip: every assertion runs on every invocation.
      */
     private val knownFailures: Set<String> = setOf(
-        "T05 merchant credited before owner debit",
-        "T08 name contains on",
-        "T09 name contains from",
-        "T10 name contains to",
-        "T13 two payments one sms",
-        "T23 unrelated brand prefix trader",
-        "T24 cred commerce not card settlement",
     )
 
     @Test fun corpusHasUniqueNamesAndCompleteTransactionExpectations() {

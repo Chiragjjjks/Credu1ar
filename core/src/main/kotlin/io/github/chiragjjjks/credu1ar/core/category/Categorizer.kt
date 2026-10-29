@@ -32,6 +32,8 @@ class Categorizer(private val rules: Map<String, Category> = emptyMap()) {
             if (fits) return Categorization(c, 1.0f, "your rule")
         }
 
+        // CRED also sells merchandise: only a card-bill payment is "not spending".
+        if (debit && m.brand?.category == Category.CARD_BILL && "merch" in t.hints) return Categorization(Category.ONLINE_SHOPPING, 0.8f, "store purchase")
         if ("card_bill" in t.hints || m.brand?.category == Category.CARD_BILL) return Categorization(Category.CARD_BILL, 0.9f, "credit-card payment")
         if (debit && t.instrument == Instrument.ATM) return Categorization(Category.ATM_CASH, 0.95f, "ATM withdrawal")
         if ("self" in t.hints) return Categorization(Category.SELF_TRANSFER, 0.8f, "own-account transfer")
@@ -48,7 +50,7 @@ class Categorizer(private val rules: Map<String, Category> = emptyMap()) {
             if (rule.pattern.containsMatchIn(text)) return Categorization(rule.category, rule.confidence, "name says “${rule.pattern.find(text)!!.value}”")
         }
 
-        val personLike = m.kind == PayeeKind.PERSON || (m.kind == PayeeKind.UNKNOWN && looksLikePerson(m.name))
+        val personLike = m.kind == PayeeKind.PERSON || (m.kind == PayeeKind.UNKNOWN && m.key != "unknown" && looksLikePerson(m.name))
         if (personLike) return Categorization(Category.SENT_TO_PEOPLE, 0.5f, "paid to a person")
         return Categorization(Category.UNCATEGORISED, 0.25f, "unknown merchant")
     }
@@ -88,7 +90,7 @@ class Categorizer(private val rules: Map<String, Category> = emptyMap()) {
             kw("recharge|broadband|fibre|fiber|postpaid|prepaid|dth|tata\\s*play|dish\\s*tv", Category.MOBILE_INTERNET, 0.75f),
             kw("electricity|water|bescom|bwssb", Category.UTILITIES, 0.7f),
             kw("parking|toll", Category.PARKING_TOLL, 0.8f),
-            kw("milk|dairy|vegetables?|veg|fruits?|fresh|meat|chicken|mutton|fish|eggs?|poultry|farm", Category.FRESH_DAIRY, 0.65f),
+            kw("milk|dairy|vegetables?|veg|fruits?|fresh|meat|chicken|mutton|fish|eggs?|poultry", Category.FRESH_DAIRY, 0.65f),
             kw("cafe|café|coffee|tea|chai|bakery|bakers|sweets?|juice|ice\\s*cream|snacks|bake", Category.CAFES, 0.65f),
             kw("restaurants?|hotel|dhaba|biryani|kitchen|tiffin|mess|bhojanalay|bhavan|pub|brewery|brew|bar|grill|eatery|foods?|pizza|burger", Category.DINING_OUT, 0.6f, glued = "restaurant|biryani"),
             kw("super\\s*market|hyper\\s*market|mart|bazaar|bazar", Category.SUPERMARKET, 0.65f, glued = "supermarket"),
