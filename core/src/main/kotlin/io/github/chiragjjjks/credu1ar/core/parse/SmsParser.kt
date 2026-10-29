@@ -25,30 +25,38 @@ object SmsParser {
     private val IST: ZoneId = ZoneId.of("Asia/Kolkata")
 
     // ---------------------------------------------------------------- amounts
-    private const val CUR = """(?:rs\.?|inr|₹|rupees?)"""
+    private const val CUR = """(?:rs\.?|inr\.?|₹|rupees?)"""
     private const val NUM = """(\d[\d,]*(?:\.\d{1,2})?)"""
-    private val AMOUNT = Regex("""(?i)(?<![a-z0-9])$CUR\s*$NUM""")
+    private val AMOUNT = Regex("""(?i)(?<![a-z0-9])$CUR[\s|]*$NUM""")
     private val VERB_AMOUNT = Regex("""(?i)\b(?:debited|credited|withdrawn|deducted)\s+(?:by|for|with|of)\s+(?:$CUR\s*)?$NUM""")
     private val BALANCE_CTX = Regex("""(?i)\b(?:avl|avail|available|bal|balance|limit|lmt|outstanding|due|minimum|min|total)\b\W{0,12}$""")
+    /**
+     * "Available balance in A/c XX1234 is Rs 9000", "Available credit limit on Card XX1234: Rs 80000", "Avl Bal INR 1,20,000".
+     * The first amount after such a phrase is a balance or limit, never the payment.
+     */
+    private val BALANCE_SPAN = Regex("""(?i)\b(?:avl|avail(?:able)?|current|closing|ledger|total)\.?\s*(?:credit\s+)?(?:bal(?:ance)?|lmt|limit)\b(?:\s+(?:in|on|of|for)\s+(?:your\s+)?(?:a/c|acct?\.?|account|card)\b[^.\d]{0,8}[x*\d]{0,10})?[\s:=\-]*(?:is|in|of)?[\s:=\-]*$CUR[\s|]*$NUM""")
     private val BALANCE = Regex("""(?i)\b(?:avl|avail(?:able)?)\.?\s*(?:bal(?:ance)?|lmt|limit)?\W{0,6}$CUR\s*$NUM|\bbal(?:ance)?\W{0,6}$CUR\s*$NUM""")
     private val FOREIGN = Regex("""(?i)\b(?:usd|eur|gbp|aed|sgd|aud|cad|jpy|chf|thb|myr|\$)\s*\d""")
 
     // ---------------------------------------------------------------- "this is not a payment event"
     private val OTP = Regex("""(?i)\b(?:otp|one[- ]time[- ]password|verification code|passcode|login code|cvv)\b""")
     private val FAILED = Regex("""(?i)\b(?:failed|failure|declined|unsuccessful|not successful|could not be|unable to|insufficient)\b|\bnot\s+(?:been\s+)?(?:debited|credited|processed)\b""")
+    private val REFUND_POSTED = Regex("""(?i)\brefund(?:ed)?\b.{0,40}\bcredited\b|\bcredited\b.{0,60}\brefund""")
     private val REQUESTED = Regex("""(?i)\b(?:has\s+)?requested\s+(?:money|rs|₹|inr)|\bcollect request\b|\bpayment request\b|\brequesting\b|\bplease pay\b|\bpay now\b""")
     private val UPCOMING = Regex("""(?i)\bwill be\s+(?:auto[- ]?)?(?:debited|deducted|charged)\b|\bis due\b|\bdue (?:on|by|date)\b|\b(?:minimum|total)\s+(?:amount\s+)?due\b|\bstatement\b|\bbill (?:is )?generated\b|\breminder\b|\bupcoming\b|\bscheduled\b|\bto be debited\b""")
     private val PROMO = Regex("""(?i)\b(?:pre-?approved|apply now|loan up to|limited period|congratulations|you(?:'ve| have) won|use code|coupon|exclusive offer)\b""")
 
     // ---------------------------------------------------------------- direction cues
-    private val DEBIT_CUE = Regex("""(?i)\b(?:debited|spent|paid|payment of|purchase|purchased|withdrawn|withdrawal|sent|transferred|trf to|deducted|charged)\b|\bdebit(?=\s+(?:inr|rs|₹))|(?<=/)dr(?=/)""")
-    private val CREDIT_CUE = Regex("""(?i)\b(?:credited|received|deposited|refunded|refund|cashback)\b|\bcredit(?=\s+(?:inr|rs|₹))|(?<=/)cr(?=/)""")
+    private val DEBIT_CUE = Regex("""(?i)\b(?:debited|spent|paid|payment of|purchase|purchased|withdrawn|withdrawal|sent|transferred|trf to|deducted|charged)\b|\bdebit(?=\s+(?:inr|rs|₹))|(?<=/)dr(?=/)|\bdr(?=\s+(?:inr|rs|₹)\b)|\b(?:txn|transaction)\b[^.|]{0,40}\bcompleted\b""")
+    private val CREDIT_CUE = Regex("""(?i)\b(?:credited|received|deposited|refunded|refund|cashback)\b|\bcredit(?=\s+(?:inr|rs|₹))|(?<=/)cr(?=/)|\bcr(?=\s+(?:inr|rs|₹)\b)""")
     /** Verbs that only appear once something has actually happened ("payment of" and "purchase" also appear in OTP texts). */
-    private val STRONG_CUE = Regex("""(?i)\b(?:debited|credited|spent|withdrawn|deducted|received|refunded|sent|paid|transferred)\b|\bdebit(?=\s+(?:inr|rs|₹))|\bcredit(?=\s+(?:inr|rs|₹))""")
+    private val STRONG_CUE = Regex("""(?i)\b(?:debited|credited|spent|withdrawn|deducted|received|refunded|sent|paid|transferred)\b|\bdebit(?=\s+(?:inr|rs|₹))|\bcredit(?=\s+(?:inr|rs|₹))|\bdr(?=\s+(?:inr|rs|₹)\b)|\b(?:txn|transaction)\b[^.|]{0,40}\bcompleted\b|\bcr(?=\s+(?:inr|rs|₹)\b)""")
     private val UPI_APPS = Regex("""(?i)google pay|gpay|phonepe|paytm|bhim|cred|amazon pay|whatsapp|paisa|navi|super\.money|mobikwik|freecharge""")
     private val GENERIC_PAYEE = setOf("emi", "bill", "payment", "charges", "fee", "fees", "purchase", "upi", "pos", "atm", "loan", "you", "your")
     private val PAREN_PAYEE = Regex("""\(([A-Za-z][A-Za-z0-9&' .\-]{2,30})\)""")
-    private val PAID_YOU =Regex("""(?i)^\s*(.{2,40}?)\s+(?:paid|sent)\s+you\s+(?:$CUR)\s*$NUM""")
+    /** "A/c XX1234 has been debited": the owner's account verb beats a counterparty's verb that happens to be nearer the amount. */
+    private val OWNER_DIRECTION = Regex("""(?i)\b(?:a/c|acct?\.?|account)\s*(?:no\.?)?\s*[x*]*\d{3,6}\s+(?:has\s+been\s+|is\s+|was\s+)?(debited|credited)\b""")
+    private val PAID_YOU = Regex("""(?i)^\s*(.{2,40}?)\s+(?:paid|sent)\s+you\s+(?:$CUR)\s*$NUM""")
     private val CARD_PAYMENT_RECEIVED = Regex("""(?i)payment\s+(?:of\s+.{0,25}?)?(?:has\s+been\s+)?received\b.{0,60}\bcredit\s*card|thank you for (?:the |your )?payment.{0,60}\bcredit\s*card|\bcredit\s*card.{0,60}payment.{0,30}\b(?:received|successful|credited)""")
 
     // ---------------------------------------------------------------- other fields
@@ -88,7 +96,7 @@ object SmsParser {
         // An OTP text talks about "payment of Rs 450" but nothing has happened yet. A real alert that merely
         // ends with "never share your OTP" always has a completed-event verb (debited, spent, sent, credited...).
         if (OTP.containsMatchIn(text) && !STRONG_CUE.containsMatchIn(text)) return ParseResult.NotFinancial
-        if (FAILED.containsMatchIn(text) || REQUESTED.containsMatchIn(text) || UPCOMING.containsMatchIn(text)) return ParseResult.NotFinancial
+        if ((FAILED.containsMatchIn(text) && !REFUND_POSTED.containsMatchIn(text)) || REQUESTED.containsMatchIn(text) || UPCOMING.containsMatchIn(text)) return ParseResult.NotFinancial
         if (PROMO.containsMatchIn(text) && !STRONG_CUE.containsMatchIn(text)) return ParseResult.NotFinancial
 
         // "Rajesh paid you ₹500": a credit whose payer is the text before "paid".
@@ -101,8 +109,11 @@ object SmsParser {
         val (amountPaise, amountStart, amountEnd) = amountMatch
         if (amountPaise <= 0) return ParseResult.NotFinancial
 
+        val ownerDirection = OWNER_DIRECTION.find(text)?.groupValues?.get(1)?.lowercase()
         val direction = when {
             paidYou != null || cardPaymentIn -> Direction.CREDIT
+            ownerDirection == "debited" -> Direction.DEBIT
+            ownerDirection == "credited" -> Direction.CREDIT
             else -> nearestDirection(text, amountStart, amountEnd) ?: return ParseResult.NotFinancial
         }
 
@@ -116,7 +127,7 @@ object SmsParser {
         val (payeeName, payeeKind) = if (paidYou != null) cleanName(paidYou.groupValues[1]) to PayeeKind.UNKNOWN else extractPayee(body, core, direction, vpa)
         val hints = hintsOf(lower, instrument, direction)
         val occurredAt = occurredAt(text, sig.receivedAtMillis)
-        val balance = BALANCE.find(text)?.let { m -> m.groupValues.drop(1).firstOrNull { it.isNotEmpty() } }?.let(::toPaise)
+        val balance = (BALANCE_SPAN.find(text) ?: BALANCE.find(text))?.let { m -> m.groupValues.drop(1).firstOrNull { it.isNotEmpty() } }?.let(::toPaise)
 
         var confidence = 0.55f
         if (tail != null) confidence += 0.15f
@@ -148,7 +159,9 @@ object SmsParser {
     private data class Amt(val paise: Long, val start: Int, val end: Int)
 
     private fun chooseAmount(text: String): Amt? {
+        val balanceSpans = BALANCE_SPAN.findAll(text).map { it.range }.toList()
         for (m in AMOUNT.findAll(text)) {
+            if (balanceSpans.any { m.range.first in it }) continue
             val ctx = text.substring(maxOf(0, m.range.first - 26), m.range.first)
             if (BALANCE_CTX.containsMatchIn(ctx)) continue
             return Amt(toPaise(m.groupValues[1]), m.range.first, m.range.last + 1)
@@ -183,9 +196,9 @@ object SmsParser {
         Regex("""\batm\b""").containsMatchIn(lower) && Regex("""withdraw|cash""").containsMatchIn(lower) -> Instrument.ATM
         lower.contains("wallet") -> Instrument.WALLET
         lower.contains("upi") || vpa != null -> Instrument.UPI
-        Regex("""\bcard\b""").containsMatchIn(lower) -> Instrument.CARD
         Regex("""\b(?:neft|imps|rtgs)\b""").containsMatchIn(lower) -> Instrument.TRANSFER
         Regex("""net ?banking""").containsMatchIn(lower) -> Instrument.NETBANKING
+        Regex("""\bcard\b""").containsMatchIn(lower) -> Instrument.CARD
         else -> Instrument.ACCOUNT
     }
 
