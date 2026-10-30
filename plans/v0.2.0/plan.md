@@ -1,6 +1,6 @@
 # v0.2.0 — useful decisions from your spending
 
-**Status:** planned · **Updated:** 2026-10-31 · **Last release:** v0.1.1 (v0.1.2 prepared)
+**Status:** planned · **Updated:** 2026-10-31 · **Last release:** v0.1.2
 
 Read [AGENTS.md](../../AGENTS.md) first. This is the next-version checklist; daily work still goes in `plans/week-NN/day-N/planned.md`. Keep all processing on-device and retain Signal Noir.
 

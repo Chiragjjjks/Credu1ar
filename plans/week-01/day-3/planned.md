@@ -1,7 +1,7 @@
 # Week 1 · Day 3 — 2026-10-31 (Saturday)
 
 **Version in progress:** v0.1.2 (last tagged: v0.1.1)
-**Status:** in progress — release commit pushed, waiting for CI before tagging
+**Status:** done — v0.1.2 published
 
 ## Plan for today
 Owner asked (paraphrased): (1) "solve the Google Play Protect thing", make it just work the way OTP auto-fill works; (2) when SMS is linked, read the SMS history automatically and fill the right month: on Nov 1 bring in all of October, on Nov 15 only Nov 1–15; (3) one more release; (4) use several **Claude** agents (no Codex) and discuss it properly first.
@@ -11,10 +11,10 @@ Owner asked (paraphrased): (1) "solve the Google Play Protect thing", make it ju
 - [x] Implement the import window (pure function in `:core` + tests, wire into first SMS link)
 - [x] Verify on the emulator (screenshots), tests, lint, smoke
 - [x] Independent review by a Claude agent → 0 blockers, 5 should-fix + nits, all fixed
-- [ ] Cut v0.1.2 (owner approved "one more release" on 2026-10-31): CI green on the release commit → tag → verify the published release
+- [x] Cut v0.1.2 (owner approved "one more release" on 2026-10-31): CI green on `5876cc5` (run 41118609472) → tagged → tag run 41119417223 → [published](https://github.com/Chiragjjjks/Credu1ar/releases/tag/v0.1.2) and verified
 
 ## What is happening now
-Release commit pushed; waiting for the `main` CI run, then tag `v0.1.2`.
+v0.1.2 is published. Waiting on the owner to connect the phone (adb install) and to set the signing secrets.
 
 ## Done
 - `50772e9` day plan · `dd6ad71` `HistoryWindow` + 6 tests · `0f07b2c` automatic first-link read, Arm-it/System/Pulse UI · `12620b4` past-tense headline · `24cee52` `scripts/seed-inbox.sh` · `eef708c` `scripts/phone-install.sh`, `scripts/set-signing-secrets.sh` · `6987a43` docs (INSTALL rewrite, ADR-013/014) · `642b9c9` review fixes.
@@ -53,5 +53,7 @@ Release commit pushed; waiting for the `main` CI run, then tag `v0.1.2`.
 - Whether to pursue Play internal testing (ADR-014 Route C).
 - Real-phone test (`docs/PHONE-TEST.md`).
 
+- Published release: `Credu1ar-v0.1.2-android.apk` 1,403,876 bytes, `SHA256SUMS.txt` OK, `/releases/latest` = v0.1.2, versionCode 10021, RECEIVE_SMS/READ_SMS present, signer = CI throwaway debug key `a819687c…` (third different key; as documented).
+
 ## Next
-Tag v0.1.2 after CI is green on the release commit; verify the release page and checksum; mark this file done.
+Owner: connect the phone so the agent can run `scripts/phone-install.sh`, run `docs/PHONE-TEST.md`, and run `scripts/set-signing-secrets.sh`. Then resume `plans/v0.2.0/plan.md` (rules editor first).

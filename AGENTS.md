@@ -30,12 +30,13 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 5. Decisions with lasting effect also go in `docs/DECISIONS.md` (short ADR entries).
 6. Keep the active version checklist (`plans/v0.2.0/plan.md`) current in the same commit as each task. Record `TODO`, `DOING`, `DONE`, `BLOCKED`, `DEFERRED` or `NO`; completed tasks need evidence, and blocked/deferred/dropped tasks need a reason.
 
-## Current state: v0.1.2 prepared (2026-10-31, week 1 day 3) — automatic month import; Play Protect answered
+## Current state: v0.1.2 released (2026-10-31, week 1 day 3) — automatic month import; Play Protect answered
 
 **Day 3 (2026-10-31):** owner asked to (1) solve the Play Protect block "like OTP auto-fill", (2) make linking SMS fill the app by itself: on Nov 1 all of October, on Nov 15 only Nov 1–15, (3) one more release, using several **Claude** agents (no Codex). Three Claude agents (Play Protect research, design, critic) reported; a fourth reviewed the code (no blockers, 5 should-fix, all fixed in `642b9c9`).
 - **Play Protect (ADR-014):** cannot be solved inside the app. India blocks internet-sideloaded apps that *declare* `RECEIVE_SMS`/`READ_SMS`/notification listener/accessibility. OTP APIs can't read bank alerts. Routes: adb from this Mac (`scripts/phone-install.sh`, USB or Wi-Fi, privately signed so updates keep data) > scan pause (not guaranteed) > Play internal testing (owner's call: $25, ID, declaration, reverses "no Play Store"). `docs/INSTALL.md` rewritten.
 - **Import (ADR-013):** `core/HistoryWindow` (day ≤ 7 → from the 1st of last month; Pulse opens on last month on days 1–3). `CatchUp` first-link read with `history_from`, lock, 200-row transactions, late-alert filter, `wiped_at`. "Add <month>" in Arm it + System replaces "Import 90 days". Past-month headline and labels; finished months compare with the whole previous month.
 - **Verified:** 35 JVM tests, lint 0 errors, smoke PASS, release APK 1,403,876 bytes (`CN=Credu1ar`). Emulator with a seeded inbox (`scripts/seed-inbox.sh`, root): clock 2 Nov → 4 payments since 1 Oct, Pulse on October; clock 15 Nov → November only, Add October restores the late 31 Oct alert; wipe → reopen stays empty; 3,000-SMS inbox first link ≈12.6 s.
+- **Released:** CI green on `5876cc5` (run 41118609472; an earlier run failed only because the smoke test used the UTC runner's date after midnight IST, fixed in the same commit); **[v0.1.2 published](https://github.com/Chiragjjjks/Credu1ar/releases/tag/v0.1.2)** and verified (checksum OK, `/releases/latest`=v0.1.2, versionCode 10021, CI debug key `a819687c…`).
 - **Found:** each CI release is signed with a different throwaway key (v0.1.0 `9084ad57…` ≠ v0.1.1 `51fd2889…`); ADR-009 corrected. Owner fix: `scripts/set-signing-secrets.sh`.
 
 ### v0.1.1 released (2026-10-30, week 1 day 2) — docs/install only
