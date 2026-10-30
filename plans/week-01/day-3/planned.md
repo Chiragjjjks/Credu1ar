@@ -27,6 +27,9 @@ Release commit pushed; waiting for the `main` CI run, then tag `v0.1.2`.
 | Critic (general-purpose) | Ambiguities, edge cases, tests, copy | Same rule independently; found the double-scan race, empty-window re-import, late-alert misfiling, Pulse "this month" label; test table used in `HistoryWindowTest` |
 | Reviewer (general-purpose) | Review `c977e57..HEAD` | No deadlock/blockers; delete re-import of the newest row, `last_sms_at` going back, truncated past-month comparison, receiver starvation, unparsed duplicates → fixed |
 
+## CI failure and fix
+- Run `41116330845` on `6987a43` failed the emulator smoke test (`rows=3 … duplicates=`): CI runners are UTC, and it ran at 01:07 IST, so `date` wrote yesterday's date (30-10-26) into the bank SMS while the paired notification was stamped 31 Oct IST, more than 15 min apart, no de-dup. Test-data bug, not app behaviour (real bank SMS carry IST dates). Reproduced locally with `TZ=UTC` (old script FAIL, fixed script PASS); fix: `TZ=Asia/Kolkata date` in `scripts/android-smoke.sh`. Run `41118370314` on the release commit would have failed the same way and was superseded.
+
 ## Decisions
 - **Play Protect (ADR-014):** no in-app fix and no permission hiding. The install guide now leads with adb (USB/Wi-Fi) from this Mac, which also keeps updates working with the private key. Play internal testing is written up as the owner's option, not started.
 - **Import window (ADR-013):** calendar rule, day ≤ 7 includes all of last month; Pulse opens on last month on days 1–3. Older months only on request ("Add September").
