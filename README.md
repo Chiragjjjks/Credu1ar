@@ -22,7 +22,9 @@ Android only (sideloaded APK, Android 8+). Personal project, not affiliated with
 
 ## Install
 
-Download `Credu1ar-vX.Y.Z-android.apk` from [Releases](https://github.com/Chiragjjjks/Credu1ar/releases/latest) and open it on your phone. Android 13+ blocks SMS and notification access for apps installed outside a store until you allow it once: **Settings → Apps → Credu1ar → ⋮ → Allow restricted settings**. The app walks you through it.
+Download `Credu1ar-vX.Y.Z-android.apk` from [Releases](https://github.com/Chiragjjjks/Credu1ar/releases/latest) and open it.
+
+Because Credu1ar reads your payment SMS, Google Play Protect (especially in India) warns about the install — the same warning it shows for any sideloaded app that asks for SMS. It is your own app on your own phone, so you can allow it: tap **More details → Install anyway**, or if that button is missing, turn **Play Protect → Scan apps** off for the one install and back on after. Full steps, including USB install and the Android 13+ **Allow restricted settings** step: **[docs/INSTALL.md](docs/INSTALL.md)**.
 
 ## Develop
 
