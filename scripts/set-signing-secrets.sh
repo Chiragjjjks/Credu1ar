@@ -12,6 +12,10 @@ ENV_FILE=~/.credu1ar/keystore.env
 [ -f "$ENV_FILE" ] || { echo "Missing $ENV_FILE" >&2; exit 1; }
 set -a; . "$ENV_FILE"; set +a
 [ -f "${CREDU1AR_KEYSTORE_PATH:-}" ] || { echo "Keystore not found at CREDU1AR_KEYSTORE_PATH" >&2; exit 1; }
+# All four or none: never leave CI with a half-set key.
+for v in CREDU1AR_KEY_ALIAS CREDU1AR_STORE_PASSWORD CREDU1AR_KEY_PASSWORD; do
+  [ -n "${!v:-}" ] || { echo "$v is empty in $ENV_FILE" >&2; exit 1; }
+done
 
 # Fail early (and quietly) if this login cannot write secrets here.
 gh api "repos/$REPO" --jq '.permissions.admin' 2>/dev/null | grep -q true \

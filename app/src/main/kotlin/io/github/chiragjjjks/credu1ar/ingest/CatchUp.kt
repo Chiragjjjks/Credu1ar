@@ -51,6 +51,18 @@ object CatchUp {
     fun scan(context: Context, onProgress: (read: Int, total: Int) -> Unit = { _, _ -> }): Result =
         lock.withLock { read(context, null, onProgress) }
 
+    /** Runs [block] with no inbox read in progress (Delete everything must not race an import's remaining chunks). */
+    fun <T> whileIdle(block: () -> T): T = lock.withLock(block)
+
+    /**
+     * Where read history starts: `history_from`, or for installs from before v0.1.2 (and after a wipe) the oldest
+     * SMS-filed payment, or now. The "Add <month>" label and the read itself both use this.
+     */
+    fun historyStart(context: Context, now: Long = System.currentTimeMillis()): Long {
+        val repo = Graph.repo(context)
+        return repo.metaLong("history_from").takeIf { it > 0 } ?: repo.earliestSmsAt() ?: now
+    }
+
     /** Reads what arrived from [fromMillis] up to where history already starts. */
     fun scanFrom(context: Context, fromMillis: Long, onProgress: (read: Int, total: Int) -> Unit = { _, _ -> }): Result =
         lock.withLock { read(context, fromMillis, onProgress) }
@@ -63,10 +75,11 @@ object CatchUp {
         val historyFrom = repo.metaLong("history_from")
         val first = if (earlier == null && last == 0L && historyFrom == 0L) HistoryWindow.firstLink(now) else null
         val history = earlier != null || first != null
-        val since = earlier ?: first?.startMillis ?: (maxOf(last, historyFrom) - OVERLAP) // small overlap; the unique key dedups
+        // Catch-up: a small overlap (the unique key dedups), never before a wipe, so deleted payments stay deleted.
+        val since = earlier ?: first?.startMillis ?: maxOf(maxOf(last, historyFrom) - OVERLAP, repo.metaLong("wiped_at"))
         // "Earlier" stops just past where history already starts, so a tap reads one month, not everything again,
         // yet still finds a 31 Oct payment whose alert arrived on 1 Nov (the first read dropped it as too old).
-        val until = if (earlier != null && historyFrom > 0) historyFrom + LATE_ALERTS else Long.MAX_VALUE
+        val until = if (earlier != null) historyStart(context, now) + LATE_ALERTS else Long.MAX_VALUE
         if (first != null) repo.clearSamples() // fictional rows must not mix into real totals
 
         var newest = last

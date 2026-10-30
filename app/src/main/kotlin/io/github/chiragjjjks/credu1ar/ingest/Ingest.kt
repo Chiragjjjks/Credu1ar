@@ -26,7 +26,11 @@ object Ingest {
         val repo = Graph.repo(context)
         val settings = Graph.settings(context)
         when (signal.source) {
-            Source.SMS -> { repo.inc("n_sms"); repo.setMeta("last_sms_at", signal.receivedAtMillis.toString()) }
+            Source.SMS -> {
+                repo.inc("n_sms")
+                // A history read replays old messages; "last SMS heard" must not jump back weeks.
+                if (signal.receivedAtMillis > repo.metaLong("last_sms_at")) repo.setMeta("last_sms_at", signal.receivedAtMillis.toString())
+            }
             Source.NOTIFICATION -> { repo.inc("n_notif"); repo.setMeta("last_notif_at", System.currentTimeMillis().toString()) }
             Source.SAMPLE -> Unit
         }

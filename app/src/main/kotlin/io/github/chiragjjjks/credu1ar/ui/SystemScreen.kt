@@ -186,7 +186,7 @@ fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
         item {
             Section("Danger zone", "07") {
                 Panel {
-                    SettingRow("Delete everything", "Payments, rules and counters. Cannot be undone. Old SMS are not re-read; new ones are still filed") {
+                    SettingRow("Delete everything", "Payments, rules and counters. Cannot be undone. New SMS are still filed; old ones come back only if you tap Add") {
                         PillButton(if (confirmWipe) "Tap again" else "Delete", primary = false) { if (confirmWipe) { model.deleteAll(); confirmWipe = false } else confirmWipe = true }
                     }
                 }

@@ -5,7 +5,7 @@
 #   scripts/seed-inbox.sh add VM-HDFCBK-S "2026-10-20 13:00" "Rs.450.00 debited from a/c **1234 on 20-10-26 ..."
 #   scripts/seed-inbox.sh clear      # delete every SMS in the emulator inbox
 #   scripts/seed-inbox.sh list
-# Times are IST.
+# Times are IST. Uses macOS `date -j` (this Mac); on Linux swap in `date -d`.
 set -euo pipefail
 ADB=${ADB:-adb}
 q() { printf "'%s'" "${1//\'/\'\\\'\'}"; }

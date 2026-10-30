@@ -10,6 +10,8 @@
 #                                             # adb then asks for the 6-digit code shown on the phone
 #   scripts/phone-install.sh connect IP:PORT  # Wi-Fi, each session: the IP:PORT shown at the top of Wireless debugging
 set -euo pipefail
+# Resolve a relative APK path before moving to the repo root.
+if [ -n "${1:-}" ] && [ "$1" != pair ] && [ "$1" != connect ] && [ -f "$1" ]; then set -- "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"; fi
 cd "$(dirname "$0")/.."
 ADB=${ADB:-adb}
 PKG=io.github.chiragjjjks.credu1ar
@@ -30,7 +32,14 @@ fi
 [ -f "$APK" ] || { echo "No such APK: $APK" >&2; exit 1; }
 
 # Only real phones: never install onto an emulator by accident.
-PHONES=$($ADB devices | awk 'NR > 1 && $2 == "device" && $1 !~ /^emulator-/ { print $1 }')
+PHONES=""
+for d in $($ADB devices | awk 'NR > 1 && $2 == "device" { print $1 }'); do
+  # Emulators can also attach over TCP, so ask the device rather than trusting its name.
+  [ "$($ADB -s "$d" shell getprop ro.kernel.qemu 2>/dev/null | tr -d '\r')" = "1" ] && continue
+  [ "$($ADB -s "$d" shell getprop ro.boot.qemu 2>/dev/null | tr -d '\r')" = "1" ] && continue
+  PHONES="$PHONES$d"$'\n'
+done
+PHONES=$(printf '%s' "$PHONES" | sed '/^$/d')
 COUNT=$(printf '%s\n' "$PHONES" | grep -c . || true)
 if [ "$COUNT" -ne 1 ]; then
   echo "Expected exactly one phone, found $COUNT. Plug in (and tap Allow on the phone), or pair/connect over Wi-Fi." >&2
@@ -45,7 +54,7 @@ if ! OUT=$($ADB -s "$PHONES" install -r "$APK" 2>&1); then
     echo >&2
     echo "The phone has a copy signed with a different key (every Releases build so far used a throwaway key)." >&2
     echo "Export your data first (System → Export → CSV), then: $ADB -s $PHONES uninstall $PKG  and run this again." >&2
-    echo "Your SMS stay on the phone, so the new install reads them back." >&2
+    echo "Your SMS stay on the phone: the new install reads this month back, and Add <month> fetches older ones." >&2
   fi
   exit 1
 fi

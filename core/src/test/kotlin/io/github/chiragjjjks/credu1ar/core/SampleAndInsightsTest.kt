@@ -139,6 +139,22 @@ class SampleAndInsightsTest {
         assertEquals("Nothing captured yet.", Insights.headline(Insights.monthSummary(emptyList(), sep, now)).line1)
     }
 
+    @Test fun aFinishedMonthIsComparedWithAllOfTheMonthBefore() {
+        fun spend(id: Long, y: Int, m: Int, d: Int, rupees: Long) = Txn(
+            id, LocalDateTime.of(y, m, d, 12, 0).atZone(ist).toInstant().toEpochMilli(), io.github.chiragjjjks.credu1ar.core.model.Direction.DEBIT,
+            rupees * 100, "shop", "Shop", Category.PROVISION, 1f, io.github.chiragjjjks.credu1ar.core.model.Instrument.UPI, null, null, false,
+        )
+        // October's spend is all on the 31st; November has 30 days. Viewed in December, November is over.
+        val t = listOf(spend(1, 2026, 10, 31, 1000), spend(2, 2026, 11, 10, 1500))
+        val dec2 = LocalDateTime.of(2026, 12, 2, 10, 0).atZone(ist).toInstant().toEpochMilli()
+        val nov = Insights.monthSummary(t, YearMonth.of(2026, 11), dec2)
+        assertEquals(100_000L, nov.prevSamePointPaise, "31 Oct must count once November is over")
+        assertEquals(50, nov.changePct)
+        // While November is running (on the 30th), 31 Oct is still "after the same point".
+        val nov30 = LocalDateTime.of(2026, 11, 30, 10, 0).atZone(ist).toInstant().toEpochMilli()
+        assertEquals(0L, Insights.monthSummary(t, YearMonth.of(2026, 11), nov30).prevSamePointPaise)
+    }
+
     @Test fun rhythmFindsLateNightFood() {
         val r = Insights.rhythm(txns, now - 90L * 24 * 3600 * 1000)
         val busiest = assertNotNull(r.busiestCell)

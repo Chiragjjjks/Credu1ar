@@ -45,7 +45,7 @@ object Insights {
         val dailyBurnPaise: Long,
         /** Month-end projection at the current pace; equals [spentPaise] once the month is over. */
         val forecastPaise: Long,
-        /** Spend in the previous month up to the same day, for an honest "vs last month" comparison. */
+        /** Spend in the previous month up to the same day (all of it once this month is over), for an honest "vs last month". */
         val prevSamePointPaise: Long,
         val prevMonthTotalPaise: Long,
         /** The month is in the past: speak about it in the past tense, and compare whole months. */
@@ -83,14 +83,18 @@ object Insights {
 
         val prev = month.minusMonths(1)
         val prevSpend = txns.filter { it.isSpend && YearMonth.from(it.date(zone)) == prev }
-        val prevSame = prevSpend.filter { it.date(zone).dayOfMonth <= (if (daysElapsed == 0) daysInMonth else daysElapsed) }.sumOf { it.amountPaise }
+        val isOver = month.isBefore(YearMonth.from(today))
+        // A running month compares with last month up to the same day; a finished month with all of last month
+        // (so 31 Oct counts when November is over, and "X% more than October" matches the October total shown).
+        val prevSame = if (isOver) prevSpend.sumOf { it.amountPaise }
+            else prevSpend.filter { it.date(zone).dayOfMonth <= (if (daysElapsed == 0) daysInMonth else daysElapsed) }.sumOf { it.amountPaise }
 
         return MonthSummary(
             month = month, spentPaise = spent, incomePaise = inMonth.filter { it.isIncome }.sumOf { it.amountPaise },
             spendCount = spend.size, byGroup = byGroup, byCategory = byCategory, topMerchants = topMerchants,
             dailySpendPaise = daily, daysElapsed = daysElapsed, daysInMonth = daysInMonth, dailyBurnPaise = burn,
             forecastPaise = forecast, prevSamePointPaise = prevSame, prevMonthTotalPaise = prevSpend.sumOf { it.amountPaise },
-            isOver = month.isBefore(YearMonth.from(today)),
+            isOver = isOver,
         )
     }
 

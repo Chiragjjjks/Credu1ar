@@ -12,6 +12,8 @@ import io.github.chiragjjjks.credu1ar.core.model.RawSignal
 import io.github.chiragjjjks.credu1ar.core.model.Source
 import io.github.chiragjjjks.credu1ar.core.model.Txn
 import kotlinx.coroutines.flow.MutableStateFlow
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 sealed interface InsertResult {
     data class Inserted(val id: Long) : InsertResult
@@ -29,6 +31,11 @@ data class Unparsed(val id: Long, val receivedAtMillis: Long, val sender: String
 /** The only class that talks SQL. Writes bump [version] so the UI knows to recompute. */
 class Repo(private val db: Db) {
     val version = MutableStateFlow(0L)
+    /**
+     * Guards multi-step writes. Fair, so a live SMS waiting to [insert] gets in between two chunks of a long
+     * history read ([batch]) instead of losing the race every time and running past its broadcast budget.
+     */
+    private val writeLock = ReentrantLock(true)
     /** Tell the UI the data changed (also called after bulk imports). */
     fun bump() { version.value = System.nanoTime() }
 
@@ -44,8 +51,9 @@ class Repo(private val db: Db) {
 
     // ------------------------------------------------------------------------------------------------ write
 
-    @Synchronized
-    fun insert(signal: RawSignal, a: Accepted, sourceId: String?, keepRaw: Boolean): InsertResult {
+    fun insert(signal: RawSignal, a: Accepted, sourceId: String?, keepRaw: Boolean): InsertResult = writeLock.withLock { insertLocked(signal, a, sourceId, keepRaw) }
+
+    private fun insertLocked(signal: RawSignal, a: Accepted, sourceId: String?, keepRaw: Boolean): InsertResult {
         val w = db.writableDatabase
         if (sourceId != null) {
             w.rawQuery("SELECT id FROM txn WHERE source = ? AND source_id = ?", arrayOf(signal.source.id, sourceId)).use { c ->
@@ -120,8 +128,9 @@ class Repo(private val db: Db) {
     }
 
     /** Teach the app: file this payment (and, if [remember], every payment to the same payee) under [category]. */
-    @Synchronized
-    fun setCategory(id: Long, category: Category, remember: Boolean) {
+    fun setCategory(id: Long, category: Category, remember: Boolean) = writeLock.withLock { setCategoryLocked(id, category, remember) }
+
+    private fun setCategoryLocked(id: Long, category: Category, remember: Boolean) {
         val w = db.writableDatabase
         w.beginTransaction()
         try {
@@ -150,15 +159,17 @@ class Repo(private val db: Db) {
     fun clearSamples() { db.writableDatabase.delete("txn", "source = ?", arrayOf(Source.SAMPLE.id)); bump() }
 
     /**
-     * Wipes payments, rules, unreadable messages and counters. Keeps `last_scan_date`, so deleted payments do not
-     * come back from the inbox on the next open; new SMS are still filed, and "Add <month>" re-reads on request.
+     * Wipes payments, rules, unreadable messages and counters. Keeps `last_scan_date` and records `wiped_at`, so
+     * catch-up reads only SMS that arrive after the wipe: deleted payments never come back by themselves.
+     * New SMS are still filed, and "Add <month>" re-reads old ones on request.
      */
-    fun deleteEverything() {
+    fun deleteEverything() = writeLock.withLock {
         val w = db.writableDatabase
         w.beginTransaction()
         try {
             listOf("txn", "rule", "unparsed").forEach { w.delete(it, null, null) }
             w.delete("meta", "key != ?", arrayOf("last_scan_date"))
+            setMeta("wiped_at", System.currentTimeMillis().toString())
             w.setTransactionSuccessful()
         } finally { w.endTransaction() }
         bump()
@@ -166,17 +177,16 @@ class Repo(private val db: Db) {
 
     /**
      * Runs [block] as one SQLite transaction, so a bulk read commits once per chunk instead of 3-4 times per message.
-     * Holds this object's lock too: [insert] is synchronized, and taking the lock first means a live SMS arriving
+     * Holds [writeLock] too, taken before the SQLite connection like every other writer, so a live SMS arriving
      * mid-import waits for the chunk to finish instead of deadlocking against it.
      */
-    @Synchronized
-    fun <T> batch(block: () -> T): T {
+    fun <T> batch(block: () -> T): T = writeLock.withLock {
         val w = db.writableDatabase
         w.beginTransactionNonExclusive()
         try {
             val r = block()
             w.setTransactionSuccessful()
-            return r
+            r
         } finally { w.endTransaction() }
     }
 
@@ -227,6 +237,11 @@ class Repo(private val db: Db) {
     // ------------------------------------------------------------------------------------------------ unparsed
 
     fun addUnparsed(signal: RawSignal, reason: String) {
+        // History reads overlap by design; keep one entry per message.
+        val seen = db.readableDatabase.rawQuery(
+            "SELECT 1 FROM unparsed WHERE received_at = ? AND sender = ? LIMIT 1", arrayOf(signal.receivedAtMillis.toString(), signal.sender),
+        ).use { it.moveToFirst() }
+        if (seen) return
         val v = ContentValues().apply { put("received_at", signal.receivedAtMillis); put("sender", signal.sender); put("reason", reason); put("body", signal.body) }
         val w = db.writableDatabase
         w.insert("unparsed", null, v)

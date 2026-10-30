@@ -121,7 +121,8 @@ class AppModel(private val app: Context) {
             "${t.merchantName.uppercase()} $sign${Money.format(t.amountPaise)}"
         }
         fun n(k: String) = repo.metaLong(k)
-        val historyFrom = n("history_from").takeIf { it > 0 } ?: repo.earliestSmsAt() ?: 0L
+        val historyStart = CatchUp.historyStart(app, now)
+        val historyFrom = if (n("history_from") > 0 || repo.earliestSmsAt() != null) historyStart else 0L
         val next = UiState(
             ready = true, now = now, month = month, txns = txns, summary = s, split = split,
             headline = Insights.headline(s, split),
@@ -141,7 +142,7 @@ class AppModel(private val app: Context) {
                 n("n_sms"), n("n_notif"), n("n_accepted"), n("n_ignored"), n("n_duplicate"), n("n_unreadable")),
             prefs = Prefs(settings.privacyMode, settings.secureScreen, settings.notifyOnCapture, settings.keepRaw, settings.onboarded),
             historyFromMillis = historyFrom,
-            earlierMonth = HistoryWindow.monthOf(HistoryWindow.monthEarlier(if (historyFrom > 0) historyFrom else now)),
+            earlierMonth = HistoryWindow.monthOf(HistoryWindow.monthEarlier(historyStart)),
         )
         _state.update { next.copy(history = it.history) } // progress is written by the reader thread; never overwrite it
     }
@@ -190,7 +191,7 @@ class AppModel(private val app: Context) {
         scope.launch(Dispatchers.IO) {
             reads.withLock {
                 if (!CatchUp.hasPermission(app)) return@withLock
-                val from = HistoryWindow.monthStart(_state.value.earlierMonth)
+                val from = HistoryWindow.monthEarlier(CatchUp.historyStart(app)) // from storage, not the last frame: a double tap reads the next month
                 setHistory(History.Reading(from, 0, 0))
                 val r = CatchUp.scanFrom(app, from) { read, total -> setHistory(History.Reading(from, read, total)) }
                 setHistory(History.Done(from, r.read, repo.countSince(from)))
@@ -200,7 +201,12 @@ class AppModel(private val app: Context) {
     }
 
     private fun setHistory(h: History) { _state.update { it.copy(history = h) } }
-    fun deleteAll() { scope.launch(Dispatchers.IO) { repo.deleteEverything() } }
+    fun deleteAll() {
+        scope.launch(Dispatchers.IO) {
+            reads.withLock { CatchUp.whileIdle { repo.deleteEverything() } }
+            setHistory(History.Idle)
+        }
+    }
     fun clearUnparsed() { scope.launch(Dispatchers.IO) { repo.clearUnparsed() } }
 
     fun setPrivacy(v: Boolean) { settings.privacyMode = v; refresh() }
