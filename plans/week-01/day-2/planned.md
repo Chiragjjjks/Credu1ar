@@ -1,7 +1,7 @@
 # Week 1 · Day 2 — 2026-10-30 (Friday)
 
 **Version in progress:** v0.1.1 (last tagged: v0.1.0)
-**Status:** in progress — cutting v0.1.1
+**Status:** done — v0.1.1 published
 
 ## Plan for today
 - [x] Owner hit Google Play Protect blocking the APK install (reads SMS → flagged in India)
@@ -9,11 +9,11 @@
 - [x] Write `docs/INSTALL.md` (install-anyway / scan-toggle / USB routes + restricted-settings), link from README & release notes
 - [x] Owner chose: cut v0.1.1 so the download page carries the install steps
 - [x] Fix a time-bomb in `scripts/android-smoke.sh` (hard-coded date went stale after midnight)
-- [ ] Push, wait for CI green on the exact commit, then tag v0.1.1 (owner pre-approved via the choice above)
-- [ ] Verify the published release (APK, SHA256SUMS, notes)
+- [x] Push, CI green on `a941e7d` (run 41045284316), tagged v0.1.1 (owner pre-approved)
+- [x] Verified the published release: checksum OK, `/releases/latest` = v0.1.1, APK 1,403,876 bytes, versionCode 10011
 
 ## What is happening now
-Release gate is green locally (28 tests, lint, release+debug APK, emulator smoke PASS, APK signature verified). Committing v0.1.1, then push → CI → tag.
+v0.1.1 is published: https://github.com/Chiragjjjks/Credu1ar/releases/tag/v0.1.1. Download page carries the Play Protect install steps. Owner still needs to get it onto the phone (scan-toggle or USB); not a release matter.
 
 ## Decisions
 - **A new release does not remove the Play Protect warning.** Verified against Google's India enhanced-fraud-protection rules: the flag is on `READ_SMS`/`RECEIVE_SMS`/notification access + install-from-internet, independent of version or signature. Recorded so this is not re-attempted. The honest install paths are the scan-toggle (phone) or USB (`adb install`), both in `docs/INSTALL.md`.
@@ -32,4 +32,4 @@ Release gate is green locally (28 tests, lint, release+debug APK, emulator smoke
 - Real-phone test (`docs/PHONE-TEST.md`).
 
 ## Next
-Push `main`; when CI is green on that commit, `git tag v0.1.1 && git push origin v0.1.1`; verify the release page.
+Owner: install via scan-toggle or USB (`docs/INSTALL.md`), then run `docs/PHONE-TEST.md`. Set CI signing secrets before a key-stable release. Resume feature work at `plans/v0.2.0/plan.md` (rules editor first).
