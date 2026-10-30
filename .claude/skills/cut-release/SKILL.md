@@ -23,7 +23,7 @@ The cycle (ADR-009): push to `main` → CI runs `:core:test`, `lintDebug`, build
    $ANDROID_HOME/build-tools/36.0.0/apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
    ```
 6. Commit (`chore(release): vX.Y.Z`), `git push origin main`, wait for the GitHub Actions run on that commit to go green (check the Actions tab; the smoke evidence is an artifact).
-7. **STOP and ask the owner** to approve the tag. Do not run the next command without a fresh, explicit yes in this conversation:
+7. **Tag only when it works.** The owner gave standing approval on 2026-10-31 ("After you think it will work just do a release"): tag once steps 5–6 are green and the change was checked on the emulator. Never tag a commit whose CI failed, was cancelled or is still running. If the owner withdraws that approval, go back to asking first.
    ```bash
    git tag vX.Y.Z && git push origin vX.Y.Z
    ```
