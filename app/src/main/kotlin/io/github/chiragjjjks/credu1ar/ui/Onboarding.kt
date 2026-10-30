@@ -16,10 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -32,7 +28,6 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ArmScreen(s: AppModel.UiState, model: AppModel, host: Host, onClose: () -> Unit) {
     val a = s.access
-    var importMsg by remember { mutableStateOf<String?>(null) }
     val needsUnlock = Build.VERSION.SDK_INT >= 33
 
     Column(Modifier.fillMaxSize().background(C.Black).statusBarsPadding().navigationBarsPadding()) {
@@ -57,7 +52,15 @@ fun ArmScreen(s: AppModel.UiState, model: AppModel, host: Host, onClose: () -> U
         }
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (a.sms) {
-                PillButton(importMsg ?: "Import last 90 days of bank SMS", modifier = Modifier.fillMaxWidth()) { importMsg = "Reading…"; model.importHistory(90) { importMsg = "Read $it messages — done" } }
+                // Linking SMS reads this month (and all of last month in the first week) by itself; this shows it happening.
+                val reading = s.history is AppModel.History.Reading
+                val line = Fmt.history(s.history) ?: if (s.historyFromMillis > 0) "SMS READ FROM ${Fmt.shortDate(s.historyFromMillis).uppercase()}" else null
+                if (line != null) Row(verticalAlignment = Alignment.CenterVertically) {
+                    LiveDot(if (reading) C.Attention else C.MoneyIn, pulse = reading)
+                    Spacer(Modifier.width(10.dp))
+                    Txt(line, T.Eyebrow.copy(color = C.Ink))
+                }
+                PillButton("Add ${Fmt.monthName(s.earlierMonth)}", enabled = !reading, modifier = Modifier.fillMaxWidth()) { model.addEarlierMonth() }
             } else {
                 PillButton("Try with sample data first", modifier = Modifier.fillMaxWidth()) { model.loadSample(); model.setOnboarded(true); onClose() }
             }

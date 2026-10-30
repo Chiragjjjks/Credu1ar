@@ -70,6 +70,7 @@ fun LiveStrip(s: AppModel.UiState) {
 @Composable
 fun PulseScreen(s: AppModel.UiState, model: AppModel, nav: Nav) {
     val sum = s.summary
+    val isNow = s.month == YearMonth.now(io.github.chiragjjjks.credu1ar.core.insights.Insights.IST)
     LazyColumn(
         Modifier.fillMaxSize().statusBarsPadding(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 120.dp),
@@ -78,7 +79,7 @@ fun PulseScreen(s: AppModel.UiState, model: AppModel, nav: Nav) {
         item { Spacer(Modifier.height(18.dp)); Eyebrow("Pulse", "01", trailing = { MonthSwitcher(s.month) { model.setMonth(it) } }) }
 
         if (sum == null || s.txns.isEmpty()) {
-            item { EmptyPulse(nav) }
+            item { EmptyPulse(s, nav) }
             return@LazyColumn
         }
 
@@ -89,12 +90,12 @@ fun PulseScreen(s: AppModel.UiState, model: AppModel, nav: Nav) {
             Txt(rupees(shown.toLong()), T.Display, maxLines = 1)
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Txt("SPENT THIS MONTH", T.Eyebrow)
+                Txt(if (isNow) "SPENT THIS MONTH" else "SPENT IN ${monthName(s.month)}", T.Eyebrow)
                 val pct = sum.changePct
                 if (pct != null && pct != 0) {
                     Spacer(Modifier.width(10.dp))
                     Txt(if (pct > 0) "▲ $pct%" else "▼ ${-pct}%", T.Eyebrow.copy(color = if (pct > 0) C.Attention else C.MoneyIn))
-                    Txt("  VS SAME POINT LAST MONTH", T.Eyebrow)
+                    Txt(if (isNow) "  VS SAME POINT LAST MONTH" else "  VS ${monthName(s.month.minusMonths(1))}", T.Eyebrow)
                 }
             }
         }
@@ -113,7 +114,7 @@ fun PulseScreen(s: AppModel.UiState, model: AppModel, nav: Nav) {
                             Txt(rupees(sum.forecastPaise), T.Amount)
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Txt("LAST MONTH", T.Eyebrow)
+                            Txt(if (isNow) "LAST MONTH" else monthName(s.month.minusMonths(1)), T.Eyebrow)
                             Txt(if (sum.prevMonthTotalPaise > 0) rupees(sum.prevMonthTotalPaise) else "—", T.Amount)
                         }
                     }
@@ -189,10 +190,23 @@ fun PulseScreen(s: AppModel.UiState, model: AppModel, nav: Nav) {
 }
 
 @Composable
-private fun EmptyPulse(nav: Nav) {
+private fun EmptyPulse(s: AppModel.UiState, nav: Nav) {
+    val h = s.history
     Column(Modifier.padding(top = 28.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if (h is AppModel.History.Reading) {
+            Headline("Reading your", "bank SMS.")
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                LiveDot(C.Attention); Spacer(Modifier.width(10.dp)); Txt(Fmt.history(h).orEmpty(), T.Eyebrow.copy(color = C.Ink))
+            }
+            Txt("Only bank and payment alerts are kept. OTPs, chats and offers are dropped unread.", T.Body, color = C.Mid)
+            return@Column
+        }
         Headline("Waiting for your", "first payment.")
-        Txt("Credu1ar files each payment the moment its SMS lands. Arm it once, or look around with fictional data first.", T.Body, color = C.Mid)
+        Txt(
+            if (h is AppModel.History.Done) "No bank payments in your SMS since ${Fmt.shortDate(h.fromMillis)}. New ones are filed the moment they land."
+            else "Credu1ar files each payment the moment its SMS lands. Arm it once, or look around with fictional data first.",
+            T.Body, color = C.Mid,
+        )
         Panel {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Eyebrow("Start here")
@@ -202,6 +216,8 @@ private fun EmptyPulse(nav: Nav) {
         }
     }
 }
+
+private fun monthName(m: YearMonth): String = m.month.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.ENGLISH).uppercase()
 
 fun Category.shortLabel(): String = label
 fun Long.rupeesRound(): String = Money.format(this)

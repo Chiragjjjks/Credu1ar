@@ -9,6 +9,7 @@ import android.os.PowerManager
 import androidx.core.app.NotificationManagerCompat
 import io.github.chiragjjjks.credu1ar.BuildConfig
 import io.github.chiragjjjks.credu1ar.Graph
+import io.github.chiragjjjks.credu1ar.core.HistoryWindow
 import io.github.chiragjjjks.credu1ar.core.insights.Insights
 import io.github.chiragjjjks.credu1ar.core.model.Category
 import io.github.chiragjjjks.credu1ar.core.model.Direction
@@ -27,7 +28,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
@@ -53,6 +57,13 @@ class AppModel(private val app: Context) {
 
     data class Prefs(val privacy: Boolean, val secure: Boolean, val notify: Boolean, val keepRaw: Boolean, val onboarded: Boolean)
 
+    /** The SMS-history read the owner is watching: the first link, or one "Add <month>" tap. */
+    sealed interface History {
+        data object Idle : History
+        data class Reading(val fromMillis: Long, val read: Int, val total: Int) : History
+        data class Done(val fromMillis: Long, val read: Int, val payments: Int) : History
+    }
+
     data class UiState(
         val ready: Boolean = false,
         val now: Long = System.currentTimeMillis(),
@@ -73,12 +84,19 @@ class AppModel(private val app: Context) {
         val access: Access = Access(false, false, false, false),
         val diag: Diag = Diag(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
         val prefs: Prefs = Prefs(false, false, true, true, false),
+        val history: History = History.Idle,
+        /** Where read SMS history starts (0 = never read). */
+        val historyFromMillis: Long = 0L,
+        /** The month one "Add <month>" tap would read. */
+        val earlierMonth: YearMonth = YearMonth.now(Insights.IST),
     )
 
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
 
     @Volatile private var month: YearMonth = YearMonth.now(Insights.IST)
+    /** One inbox read at a time from the UI: the permission callback and onResume both ask, the second must not race. */
+    private val reads = Mutex()
 
     init {
         scope.launch {
@@ -103,7 +121,8 @@ class AppModel(private val app: Context) {
             "${t.merchantName.uppercase()} $sign${Money.format(t.amountPaise)}"
         }
         fun n(k: String) = repo.metaLong(k)
-        _state.value = UiState(
+        val historyFrom = n("history_from").takeIf { it > 0 } ?: repo.earliestSmsAt() ?: 0L
+        val next = UiState(
             ready = true, now = now, month = month, txns = txns, summary = s, split = split,
             headline = Insights.headline(s, split),
             movers = Insights.movers(txns, month, now),
@@ -121,7 +140,10 @@ class AppModel(private val app: Context) {
             diag = Diag(n("last_sms_at"), n("last_notif_at"), n("last_scan_at"), n("last_scan_read"), n("listener_connected_at"), n("listener_disconnected_at"),
                 n("n_sms"), n("n_notif"), n("n_accepted"), n("n_ignored"), n("n_duplicate"), n("n_unreadable")),
             prefs = Prefs(settings.privacyMode, settings.secureScreen, settings.notifyOnCapture, settings.keepRaw, settings.onboarded),
+            historyFromMillis = historyFrom,
+            earlierMonth = HistoryWindow.monthOf(HistoryWindow.monthEarlier(if (historyFrom > 0) historyFrom else now)),
         )
+        _state.update { next.copy(history = it.history) } // progress is written by the reader thread; never overwrite it
     }
 
     private fun access(): Access {
@@ -145,8 +167,39 @@ class AppModel(private val app: Context) {
 
     fun loadSample() { scope.launch(Dispatchers.IO) { SampleData.signals(System.currentTimeMillis()).forEach { Ingest.handle(app, it, quiet = true) }; repo.bump() } }
     fun clearSample() { scope.launch(Dispatchers.IO) { repo.clearSamples() } }
-    fun importHistory(days: Int, done: (Int) -> Unit = {}) { scope.launch(Dispatchers.IO) { val n = CatchUp.scan(app, days, forceHistory = true); repo.bump(); withContext(Dispatchers.Main) { done(n) } } }
-    fun catchUpNow() { scope.launch(Dispatchers.IO) { CatchUp.scan(app); repo.bump() } }
+    /**
+     * Reads new SMS. The first time SMS access works, this is the first-link read: this month, plus all of last month
+     * in the first week (HistoryWindow), with live progress, and Pulse opens where the numbers are.
+     */
+    fun catchUpNow() {
+        scope.launch(Dispatchers.IO) {
+            reads.withLock {
+                if (!CatchUp.needsFirstLink(app) || !CatchUp.hasPermission(app)) { CatchUp.scan(app); repo.bump(); return@withLock }
+                val w = HistoryWindow.firstLink(System.currentTimeMillis())
+                setHistory(History.Reading(w.startMillis, 0, 0))
+                val r = CatchUp.scan(app) { read, total -> setHistory(History.Reading(w.startMillis, read, total)) }
+                setHistory(History.Done(r.fromMillis, r.read, repo.countSince(r.fromMillis)))
+                r.window?.let { if (it.openOn != month) month = it.openOn }
+                repo.bump()
+            }
+        }
+    }
+
+    /** "Add <month>": reads one more month of SMS history, back from where it starts now. */
+    fun addEarlierMonth() {
+        scope.launch(Dispatchers.IO) {
+            reads.withLock {
+                if (!CatchUp.hasPermission(app)) return@withLock
+                val from = HistoryWindow.monthStart(_state.value.earlierMonth)
+                setHistory(History.Reading(from, 0, 0))
+                val r = CatchUp.scanFrom(app, from) { read, total -> setHistory(History.Reading(from, read, total)) }
+                setHistory(History.Done(from, r.read, repo.countSince(from)))
+                repo.bump()
+            }
+        }
+    }
+
+    private fun setHistory(h: History) { _state.update { it.copy(history = h) } }
     fun deleteAll() { scope.launch(Dispatchers.IO) { repo.deleteEverything() } }
     fun clearUnparsed() { scope.launch(Dispatchers.IO) { repo.clearUnparsed() } }
 

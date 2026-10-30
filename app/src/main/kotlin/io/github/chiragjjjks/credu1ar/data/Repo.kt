@@ -149,14 +149,35 @@ class Repo(private val db: Db) {
     fun deleteTxn(id: Long) { db.writableDatabase.delete("txn", "id = ?", arrayOf(id.toString())); bump() }
     fun clearSamples() { db.writableDatabase.delete("txn", "source = ?", arrayOf(Source.SAMPLE.id)); bump() }
 
+    /**
+     * Wipes payments, rules, unreadable messages and counters. Keeps `last_scan_date`, so deleted payments do not
+     * come back from the inbox on the next open; new SMS are still filed, and "Add <month>" re-reads on request.
+     */
     fun deleteEverything() {
         val w = db.writableDatabase
         w.beginTransaction()
         try {
-            listOf("txn", "rule", "unparsed", "meta").forEach { w.delete(it, null, null) }
+            listOf("txn", "rule", "unparsed").forEach { w.delete(it, null, null) }
+            w.delete("meta", "key != ?", arrayOf("last_scan_date"))
             w.setTransactionSuccessful()
         } finally { w.endTransaction() }
         bump()
+    }
+
+    /**
+     * Runs [block] as one SQLite transaction, so a bulk read commits once per chunk instead of 3-4 times per message.
+     * Holds this object's lock too: [insert] is synchronized, and taking the lock first means a live SMS arriving
+     * mid-import waits for the chunk to finish instead of deadlocking against it.
+     */
+    @Synchronized
+    fun <T> batch(block: () -> T): T {
+        val w = db.writableDatabase
+        w.beginTransactionNonExclusive()
+        try {
+            val r = block()
+            w.setTransactionSuccessful()
+            return r
+        } finally { w.endTransaction() }
     }
 
     // ------------------------------------------------------------------------------------------------ read
@@ -193,6 +214,15 @@ class Repo(private val db: Db) {
     ).use { c -> c.moveToFirst(); Counts(c.getInt(0), c.getInt(1), c.getInt(2), c.getInt(3), c.getInt(4)) }
 
     data class Counts(val total: Int, val review: Int, val sample: Int, val sms: Int, val notif: Int)
+
+    /** Real (non-sample) payments dated on or after [fromMillis]: the "86 payments" in "1 Oct → today · 86 payments". */
+    fun countSince(fromMillis: Long): Int = db.readableDatabase.rawQuery(
+        "SELECT COUNT(*) FROM txn WHERE occurred_at >= ? AND source != ?", arrayOf(fromMillis.toString(), Source.SAMPLE.id),
+    ).use { c -> if (c.moveToFirst()) c.getInt(0) else 0 }
+
+    /** When the oldest SMS-filed payment arrived; stands in for `history_from` on installs from before v0.1.2. */
+    fun earliestSmsAt(): Long? = db.readableDatabase.rawQuery("SELECT MIN(received_at) FROM txn WHERE source = ?", arrayOf(Source.SMS.id))
+        .use { c -> if (c.moveToFirst() && !c.isNull(0)) c.getLong(0) else null }
 
     // ------------------------------------------------------------------------------------------------ unparsed
 

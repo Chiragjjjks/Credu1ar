@@ -53,7 +53,6 @@ private fun StatusRow(label: String, ok: Boolean, detail: String, action: String
 fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
     val scope = rememberCoroutineScope()
     var updateMsg by remember { mutableStateOf<String?>(null) }
-    var importMsg by remember { mutableStateOf<String?>(null) }
     var confirmWipe by remember { mutableStateOf(false) }
     val d = s.diag
     val a = s.access
@@ -111,8 +110,14 @@ fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
             Section("Data", "03") {
                 Panel {
                     Column {
-                        SettingRow("Import SMS history", importMsg ?: "Read old bank alerts already on this phone") {
-                            PillButton("90 days", enabled = a.sms) { importMsg = "Reading…"; model.importHistory(90) { importMsg = "Read $it messages" } }
+                        val h = s.history
+                        SettingRow("SMS history", when {
+                            h is AppModel.History.Reading -> "Reading… ${h.read} of ${h.total} messages"
+                            h is AppModel.History.Done -> "Read from ${Fmt.shortDate(h.fromMillis)} · ${h.payments} payments"
+                            s.historyFromMillis > 0 -> "Read from ${Fmt.shortDate(s.historyFromMillis)}. Each tap reads one more month"
+                            else -> "Old bank alerts already on this phone, a month at a time"
+                        }) {
+                            PillButton("Add ${s.earlierMonth.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)}", enabled = a.sms && h !is AppModel.History.Reading) { model.addEarlierMonth() }
                         }
                         Hairline()
                         SettingRow("Sample data", if (s.counts.sample > 0) "${s.counts.sample} fictional payments loaded" else "Fictional bank messages, to look around") {
@@ -181,7 +186,7 @@ fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
         item {
             Section("Danger zone", "07") {
                 Panel {
-                    SettingRow("Delete everything", "Payments, rules and counters. Cannot be undone") {
+                    SettingRow("Delete everything", "Payments, rules and counters. Cannot be undone. Old SMS are not re-read; new ones are still filed") {
                         PillButton(if (confirmWipe) "Tap again" else "Delete", primary = false) { if (confirmWipe) { model.deleteAll(); confirmWipe = false } else confirmWipe = true }
                     }
                 }

@@ -21,7 +21,7 @@ import kotlin.concurrent.thread
  *
  * Extras: sender+body -> a real SMS_RECEIVED intent with genuine PDUs goes through the production [SmsReceiver];
  *         notif=true  -> same text as a notification signal;  sample=true -> load sample data;  sample=clear -> remove it;
- *         catchup=true -> run the inbox scan;  wipe=true -> delete everything.
+ *         catchup=true -> run the inbox read (the first-link window if history was never read);  wipe=true -> delete everything.
  */
 class DebugInjectReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -34,7 +34,7 @@ class DebugInjectReceiver : BroadcastReceiver() {
                     "true" -> SampleData.signals(System.currentTimeMillis()).forEach { Ingest.handle(app, it, quiet = true) }
                     "clear" -> Graph.repo(app).clearSamples()
                 }
-                if (intent.getBooleanExtra("catchup", false)) CatchUp.scan(app, forceHistory = true)
+                if (intent.getBooleanExtra("catchup", false)) CatchUp.scan(app)
                 val sender = intent.getStringExtra("sender")
                 val body = intent.getStringExtra("body")
                 if (sender != null && body != null) {

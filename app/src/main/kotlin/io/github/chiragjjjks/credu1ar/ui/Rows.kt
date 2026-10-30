@@ -24,6 +24,7 @@ import io.github.chiragjjjks.credu1ar.core.model.Txn
 import java.time.Instant
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
 import java.util.Locale
 
 object Fmt {
@@ -49,6 +50,19 @@ object Fmt {
         return if (l == "Today" || l == "Yesterday") l else shortDate(ms)
     }
     fun month(ym: YearMonth): String = ym.atDay(1).format(monthFmt).uppercase()
+
+    /** "September", or "December 2025" when it is not this year. */
+    fun monthName(ym: YearMonth): String {
+        val name = ym.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
+        return if (ym.year == YearMonth.now(zone).year) name else "$name ${ym.year}"
+    }
+
+    /** One line for the SMS-history read: live progress, then what it found. Null when nothing is happening. */
+    fun history(h: AppModel.History): String? = when (h) {
+        AppModel.History.Idle -> null
+        is AppModel.History.Reading -> "READING SMS · ${shortDate(h.fromMillis).uppercase()} → TODAY" + if (h.total > 0) " · ${h.read} / ${h.total}" else ""
+        is AppModel.History.Done -> "${shortDate(h.fromMillis).uppercase()} → TODAY · ${h.payments} ${if (h.payments == 1) "PAYMENT" else "PAYMENTS"} FILED"
+    }
 
     fun ago(ms: Long, now: Long): String {
         if (ms == 0L) return "never"
