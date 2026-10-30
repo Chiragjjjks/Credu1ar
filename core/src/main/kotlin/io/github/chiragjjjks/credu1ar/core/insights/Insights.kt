@@ -8,6 +8,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
+import java.time.format.TextStyle
+import java.util.Locale
 import kotlin.math.abs
 
 /** Everything the analysis screens need, computed from a plain list of transactions. Pure and fast (hundreds of rows). */
@@ -46,6 +48,8 @@ object Insights {
         /** Spend in the previous month up to the same day, for an honest "vs last month" comparison. */
         val prevSamePointPaise: Long,
         val prevMonthTotalPaise: Long,
+        /** The month is in the past: speak about it in the past tense, and compare whole months. */
+        val isOver: Boolean = false,
     ) {
         /** Percentage change vs the same point last month, or null when there is nothing to compare. */
         val changePct: Int? get() = if (prevSamePointPaise >= 50_000) (((spentPaise - prevSamePointPaise) * 100.0) / prevSamePointPaise).toInt() else null
@@ -86,6 +90,7 @@ object Insights {
             spendCount = spend.size, byGroup = byGroup, byCategory = byCategory, topMerchants = topMerchants,
             dailySpendPaise = daily, daysElapsed = daysElapsed, daysInMonth = daysInMonth, dailyBurnPaise = burn,
             forecastPaise = forecast, prevSamePointPaise = prevSame, prevMonthTotalPaise = prevSpend.sumOf { it.amountPaise },
+            isOver = month.isBefore(YearMonth.from(today)),
         )
     }
 
@@ -215,7 +220,16 @@ object Insights {
         if (s.spendCount == 0) return Headline("Nothing captured yet.", "Payments you make will appear here the moment the SMS lands.")
         val spent = Money.format(s.spentPaise)
         val change = s.changePct
-        val line1 = when {
+        val line1 = if (s.isOver) {
+            val name = s.month.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
+            val prev = s.month.minusMonths(1).month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
+            when {
+                change == null -> "You spent $spent in $name."
+                change > 3 -> "You spent $spent in $name — $change% more than $prev."
+                change < -3 -> "You spent $spent in $name — ${-change}% less than $prev."
+                else -> "You spent $spent in $name — about the same as $prev."
+            }
+        } else when {
             change == null -> "You've spent $spent so far this month."
             change > 3 -> "You've spent $spent — $change% more than this time last month."
             change < -3 -> "You've spent $spent — ${-change}% less than this time last month."

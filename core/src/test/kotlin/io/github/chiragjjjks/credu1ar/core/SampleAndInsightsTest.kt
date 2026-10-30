@@ -128,10 +128,14 @@ class SampleAndInsightsTest {
     }
 
     @Test fun headlineIsPlainEnglishAndMentionsTheGrocerySplit() {
-        val s = Insights.monthSummary(txns, sep, now)
+        val s = Insights.monthSummary(txns, YearMonth.of(2026, 10), now) // the current month
         val h = Insights.headline(s, Insights.groceriesSplit(s))
         assertTrue(h.line1.startsWith("You've spent ₹"), h.line1)
         assertTrue(h.line2.isNotBlank())
+        // A finished month is told in the past tense and named, never "so far this month".
+        val past = Insights.monthSummary(txns, sep, now)
+        val ph = Insights.headline(past, Insights.groceriesSplit(past)).line1
+        assertTrue(ph.startsWith("You spent ₹") && "in September" in ph && "this month" !in ph, ph)
         assertEquals("Nothing captured yet.", Insights.headline(Insights.monthSummary(emptyList(), sep, now)).line1)
     }
 
