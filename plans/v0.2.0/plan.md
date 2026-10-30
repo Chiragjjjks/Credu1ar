@@ -1,6 +1,6 @@
 # v0.2.0 — useful decisions from your spending
 
-**Status:** planned · **Updated:** 2026-10-29 · **Last release:** v0.1.0
+**Status:** planned · **Updated:** 2026-10-31 · **Last release:** v0.1.1 (v0.1.2 prepared)
 
 Read [AGENTS.md](../../AGENTS.md) first. This is the next-version checklist; daily work still goes in `plans/week-NN/day-N/planned.md`. Keep all processing on-device and retain Signal Noir.
 
@@ -29,6 +29,8 @@ These remain visible but are outside the first three feature milestones. Revisit
 - **DEFERRED:** richer corrections — manual cash entries, split categories, refund links and self-transfer corrections.
 - **DEFERRED:** encrypted backup/restore and app lock — preserve learned rules as well as payments.
 - **DEFERRED:** home-screen widget, monthly recap and decorative grain.
+
+**DONE (separate delivery, v0.1.2):** automatic month import on first SMS link and "Add <month>" (owner request 2026-10-31; ADR-013). Shipped as a point release so this milestone keeps its scope. Evidence: week 1 day 3 journal.
 
 **DONE (separate delivery):** [landing site published](https://chiragjjjks.github.io/Credu1ar/); workflow `40920360529` passed, public assets and APK link verified. See the daily journal.
 

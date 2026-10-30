@@ -30,7 +30,15 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 5. Decisions with lasting effect also go in `docs/DECISIONS.md` (short ADR entries).
 6. Keep the active version checklist (`plans/v0.2.0/plan.md`) current in the same commit as each task. Record `TODO`, `DOING`, `DONE`, `BLOCKED`, `DEFERRED` or `NO`; completed tasks need evidence, and blocked/deferred/dropped tasks need a reason.
 
-## Current state: v0.1.1 released (2026-10-30, week 1 day 2) — docs/install only
+## Current state: v0.1.2 prepared (2026-10-31, week 1 day 3) — automatic month import; Play Protect answered
+
+**Day 3 (2026-10-31):** owner asked to (1) solve the Play Protect block "like OTP auto-fill", (2) make linking SMS fill the app by itself: on Nov 1 all of October, on Nov 15 only Nov 1–15, (3) one more release, using several **Claude** agents (no Codex). Three Claude agents (Play Protect research, design, critic) reported; a fourth reviewed the code (no blockers, 5 should-fix, all fixed in `642b9c9`).
+- **Play Protect (ADR-014):** cannot be solved inside the app. India blocks internet-sideloaded apps that *declare* `RECEIVE_SMS`/`READ_SMS`/notification listener/accessibility. OTP APIs can't read bank alerts. Routes: adb from this Mac (`scripts/phone-install.sh`, USB or Wi-Fi, privately signed so updates keep data) > scan pause (not guaranteed) > Play internal testing (owner's call: $25, ID, declaration, reverses "no Play Store"). `docs/INSTALL.md` rewritten.
+- **Import (ADR-013):** `core/HistoryWindow` (day ≤ 7 → from the 1st of last month; Pulse opens on last month on days 1–3). `CatchUp` first-link read with `history_from`, lock, 200-row transactions, late-alert filter, `wiped_at`. "Add <month>" in Arm it + System replaces "Import 90 days". Past-month headline and labels; finished months compare with the whole previous month.
+- **Verified:** 35 JVM tests, lint 0 errors, smoke PASS, release APK 1,403,876 bytes (`CN=Credu1ar`). Emulator with a seeded inbox (`scripts/seed-inbox.sh`, root): clock 2 Nov → 4 payments since 1 Oct, Pulse on October; clock 15 Nov → November only, Add October restores the late 31 Oct alert; wipe → reopen stays empty; 3,000-SMS inbox first link ≈12.6 s.
+- **Found:** each CI release is signed with a different throwaway key (v0.1.0 `9084ad57…` ≠ v0.1.1 `51fd2889…`); ADR-009 corrected. Owner fix: `scripts/set-signing-secrets.sh`.
+
+### v0.1.1 released (2026-10-30, week 1 day 2) — docs/install only
 
 **Day 2 (2026-10-30):** owner hit Google Play Protect blocking the sideloaded APK (it reads SMS → flagged in India; the block is tied to the permission + sideloading, NOT fixable by a release or by wording — see `docs/INSTALL.md` and today's journal). Added `docs/INSTALL.md` (install-anyway / scan-toggle / USB) and cut **v0.1.1** (docs/CI only; no app code change since v0.1.0 `20291534`). Fixed a stale hard-coded date in `scripts/android-smoke.sh` that broke the paired-payment de-dup after midnight (would have failed CI today). Local gate green; CI green on `a941e7d` (run 41045284316); **[v0.1.1 published](https://github.com/Chiragjjjks/Credu1ar/releases/tag/v0.1.1)** and verified (checksum OK, `/releases/latest`=v0.1.1, APK 1,403,876 bytes, versionCode 10011). The Play Protect warning is unchanged by design — install via scan-toggle or USB (`docs/INSTALL.md`).
 
@@ -57,9 +65,9 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 
 ## Next, in order
 
-1. Owner: install v0.1.0, run `docs/PHONE-TEST.md`, paste back the Diagnostics report; add real formats as fixtures before changing parser rules.
-2. Owner: set the four CI signing secrets (`docs/ARCHITECTURE.md`) before the next release. The published v0.1.0 uses a temporary debug key; moving to the private key requires uninstall/reinstall (export first; re-import SMS afterward).
-3. Follow [`plans/v0.2.0/plan.md`](plans/v0.2.0/plan.md): start with the rules editor, then merchant pages and category budgets. Keep statuses current; recurring calendar and other follow-ups are recorded there. Later releases need fresh approval.
+1. Owner: get the app onto the phone. Easiest: plug in or pair Wi-Fi debugging and let the agent run `scripts/phone-install.sh` (privately signed, updates in place). Then `docs/PHONE-TEST.md` and paste back the Diagnostics report; add real formats as fixtures before changing parser rules.
+2. Owner: run `scripts/set-signing-secrets.sh` (personal `gh` login) so Releases stop using a new throwaway key each time. Decide whether to pursue Play internal testing (ADR-014, Route C).
+3. Follow [`plans/v0.2.0/plan.md`](plans/v0.2.0/plan.md): rules editor, then merchant pages and category budgets. Later releases need fresh approval.
 
 ## Rules (hard)
 
