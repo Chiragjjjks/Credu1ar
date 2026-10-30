@@ -18,8 +18,13 @@ $ADB shell am start -n $PKG/.MainActivity >/dev/null; sleep 6
 $ADB shell pidof $PKG >/dev/null || fail "app is not running after launch"
 ./scripts/inject.sh wipe >/dev/null; sleep 1
 
-./scripts/inject.sh sms VM-HDFCBK-S "Rs.450.00 debited from a/c **1234 on 29-10-26 to VPA zepto@axisbank(UPI Ref No 630112345678). Not you? Call 18002586161" >/dev/null
-./scripts/inject.sh sms AD-ICICIT-S "INR 2,300.00 spent using ICICI Bank Card XX1234 on 29-Oct-26 on AMAZON PAY. Avl Limit: INR 1,00,000.00. If not you, call 1800 2662/SMS BLOCK 1234 to 9215676766." >/dev/null
+# Dates must be "today" so the paired SMS + app notification fall inside the 15-minute de-dup window
+# whatever day CI runs. A fixed date would drift a day apart from the live notification after midnight.
+TODAY_DMY="$(date +%d-%m-%y)"     # 30-10-26
+TODAY_DMONY="$(date +%d-%b-%y)"   # 30-Oct-26
+
+./scripts/inject.sh sms VM-HDFCBK-S "Rs.450.00 debited from a/c **1234 on ${TODAY_DMY} to VPA zepto@axisbank(UPI Ref No 630112345678). Not you? Call 18002586161" >/dev/null
+./scripts/inject.sh sms AD-ICICIT-S "INR 2,300.00 spent using ICICI Bank Card XX1234 on ${TODAY_DMONY} on AMAZON PAY. Avl Limit: INR 1,00,000.00. If not you, call 1800 2662/SMS BLOCK 1234 to 9215676766." >/dev/null
 ./scripts/inject.sh sms VM-AMAZON "123456 is your OTP for txn of Rs 450.00 at AMAZON. Valid for 10 mins. Do not share with anyone." >/dev/null
 ./scripts/inject.sh notif PhonePe "Paid ₹450 to Zepto" com.phonepe.app >/dev/null
 sleep 3

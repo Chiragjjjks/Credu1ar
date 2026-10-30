@@ -30,7 +30,11 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 5. Decisions with lasting effect also go in `docs/DECISIONS.md` (short ADR entries).
 6. Keep the active version checklist (`plans/v0.2.0/plan.md`) current in the same commit as each task. Record `TODO`, `DOING`, `DONE`, `BLOCKED`, `DEFERRED` or `NO`; completed tasks need evidence, and blocked/deferred/dropped tasks need a reason.
 
-## Current state: v0.1.0 released (2026-10-29, week 1 day 1)
+## Current state: v0.1.1 being cut (2026-10-30, week 1 day 2) — docs/install only
+
+**Day 2 (2026-10-30):** owner hit Google Play Protect blocking the sideloaded APK (it reads SMS → flagged in India; the block is tied to the permission + sideloading, NOT fixable by a release or by wording — see `docs/INSTALL.md` and today's journal). Added `docs/INSTALL.md` (install-anyway / scan-toggle / USB) and cut **v0.1.1** (docs/CI only; no app code change since v0.1.0 `20291534`). Fixed a stale hard-coded date in `scripts/android-smoke.sh` that broke the paired-payment de-dup after midnight (would have failed CI today). Local gate green; tag pending CI.
+
+### v0.1.0 released (2026-10-29, week 1 day 1)
 
 **Done and verified on this Mac (JDK 17, Android 15 emulator `mn35`):**
 - `:core` parser/merchants/categoriser/insights/sample data, 28 JVM tests green: 37 hand-written parser fixtures plus 100 adversarial fixtures written by Codex (ratchet `knownFailures` is empty; the first run failed 36, all fixed).
