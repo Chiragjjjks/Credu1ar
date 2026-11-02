@@ -157,6 +157,11 @@ class AppModel(private val app: Context) {
 
     fun refresh() { scope.launch { recompute() } }
 
+    /**
+     * One pass at a time: the database collector and refresh() both call this on Dispatchers.Default, and a pass that
+     * started before a view switch must not land after it with a report for the other view.
+     */
+    @Synchronized
     private fun recompute() {
         val now = System.currentTimeMillis()
         val txns = repo.all()
@@ -170,7 +175,10 @@ class AppModel(private val app: Context) {
             val anyThisMonth = txns.any { YearMonth.from(Instant.ofEpochMilli(it.occurredAtMillis).atZone(Insights.IST)) == thisMonth }
             if (statements.isNotEmpty() && !anyThisMonth && month == thisMonth) openBest(statements, ranges)
         }
-        val view = pulseView(txns, statements, ranges, now)
+        // Read the selection once, so the report, the toggle and the switcher in this state always agree.
+        val by = this.by
+        val month = this.month
+        val view = pulseView(txns, statements, ranges, now, by, month)
         val s = Insights.monthSummary(txns, month, now)
         val split = Insights.groceriesSplit(s)
         val ticker = txns.take(9).map { t ->
@@ -214,7 +222,7 @@ class AppModel(private val app: Context) {
      * What Pulse shows. No statements: today's Pulse, untouched. BY STATEMENT: the chosen statement's period.
      * BY MONTH: a report for any past or part-covered month; the current month stays live until a statement covers it.
      */
-    private fun pulseView(txns: List<Txn>, statements: List<StatementRecord>, ranges: List<CoveredRange>, now: Long): PulseView {
+    private fun pulseView(txns: List<Txn>, statements: List<StatementRecord>, ranges: List<CoveredRange>, now: Long, by: PulseBy, month: YearMonth): PulseView {
         val today = Instant.ofEpochMilli(now).atZone(Insights.IST).toLocalDate()
         val current = YearMonth.from(today)
         val oldest = listOfNotNull(
