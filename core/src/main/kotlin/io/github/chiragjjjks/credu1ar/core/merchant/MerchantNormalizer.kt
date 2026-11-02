@@ -7,15 +7,19 @@ data class Merchant(val key: String, val name: String, val brand: Brand?, val ki
 
 object MerchantNormalizer {
     private val railPrefix = Regex("""(?i)^(?:pyu|payu|raz|rzp|paytm|ptm|billdesk|bd|upi|pos|ecom|ib|neft|imps|rtgs|ach|mmt|cashfree|ccavenue)[\s*\-/]+""")
-    private val suffixNoise = setOf("pvt", "ltd", "limited", "private", "llp", "india", "inc", "corp", "co")
+    internal val suffixNoise = setOf("pvt", "ltd", "limited", "private", "llp", "india", "inc", "corp", "co")
     private val phoneLocal = Regex("""^(?:\+?91)?\d{10}(?:-\d)?$""")
 
-    fun resolve(rawName: String?, vpa: String?, kindHint: PayeeKind = PayeeKind.UNKNOWN): Merchant {
+    /**
+     * [truncated]: the source cut the name short, so its last word may be a fragment (see [MerchantDirectory.match]).
+     * The name and key keep the words as printed: a completion is a guess used only for matching.
+     */
+    fun resolve(rawName: String?, vpa: String?, kindHint: PayeeKind = PayeeKind.UNKNOWN, truncated: Boolean = false): Merchant {
         var cleaned = rawName.orEmpty().trim()
         repeat(2) { cleaned = cleaned.replace(railPrefix, "") }
         val vpaLocal = vpa?.substringBefore('@')?.lowercase()
 
-        val brand = MerchantDirectory.match(cleaned, vpaLocal)
+        val brand = MerchantDirectory.match(cleaned, vpaLocal, truncated)
         if (brand != null) return Merchant(brand.key, brand.name, brand, PayeeKind.MERCHANT)
 
         val words = cleaned.split(Regex("""[^A-Za-z0-9&']+"""))

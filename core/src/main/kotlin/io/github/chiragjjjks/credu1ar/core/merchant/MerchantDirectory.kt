@@ -213,20 +213,51 @@ object MerchantDirectory {
     /** Words without payment-rail noise ("payu", "upi", "ybl", "pvt", "ltd"...): what a person would call the merchant. */
     fun tokens(text: String?): List<String> = words(text).filter { it !in noiseTokens }
 
-    fun match(text: String?, vpaLocal: String? = null): Brand? {
-        val all = words(text) + words(vpaLocal)
+    /** Every word of a phrase alias ("bangalore metro" → bangalore, metro): what a cut-off last word may complete to. */
+    private val phraseWords: Set<String> by lazy {
+        brands.flatMap { b -> b.aliases.filter { ' ' in it }.flatMap { it.split(' ') } }.toSet()
+    }
+
+    /**
+     * Full words a cut-off fragment may stand for: [vocabulary] words that start with it and are longer.
+     * Fragments under 3 letters ("P", "C") are never completed. Shortest first, so "stor" tries "store" before "stores".
+     */
+    fun completions(fragment: String?, vocabulary: Collection<String>): List<String> {
+        val f = fragment?.lowercase() ?: return emptyList()
+        if (f.length < 3 || !f.all { it.isLetter() }) return emptyList()
+        return vocabulary.filter { it.length > f.length && it.startsWith(f) }.distinct().sortedWith(compareBy({ it.length }, { it }))
+    }
+
+    /**
+     * The brand a payee name (and/or UPI handle) belongs to, or null.
+     *
+     * [truncated]: the source cut the name short (bank statements print ~14–18 characters), so its last word may be
+     * a fragment. Then the fragment
+     *  - may be completed from the directory's own phrase words, but only to finish a **phrase** alias, which needs
+     *    at least one other real word ("BANGALORE METR" → "bangalore metro"; "AVENUE SUPERMAR" → "avenue supermarts");
+     *  - never makes a single-word match through completion ("MANOJ GROW" is not Groww, "SRI DEVI DECA" not Decathlon);
+     *  - counts as a single word on its own only when it has 5+ letters, because a short fragment can equal a short
+     *    alias by accident ("PRIYANKA AMUL" is likely "Amulya", not Amul).
+     */
+    fun match(text: String?, vpaLocal: String? = null, truncated: Boolean = false): Brand? {
+        val nameWords = words(text)
+        val vpaWords = words(vpaLocal)
+        val all = nameWords + vpaWords
         if (all.isEmpty()) return null
-        val clean = all.filter { it !in noiseTokens }
+        val fragment = if (truncated) nameWords.lastOrNull() else null
+        val singles = if (fragment != null && fragment.length < 5) nameWords.dropLast(1) + vpaWords else all
         // Phrase aliases see every word (so "shell india" can match); single-word aliases see only clean words.
         val padded = " ${all.joinToString(" ")} "
-        val words = clean
+        val completed = completions(fragment, phraseWords).map { c -> " ${(nameWords.dropLast(1) + c + vpaWords).joinToString(" ")} " }
+        val words = singles.filter { it !in noiseTokens }
         var best: Pair<Brand, Int>? = null
         for (brand in brands) {
             for (alias in brand.aliases) {
                 val glued = alias.replace(" ", "")
                 val hit = if (alias.contains(' ')) {
                     // A phrase also matches when the handle runs it together: "apollopharmacy", "swiggyinstamart".
-                    padded.contains(" $alias ") || (glued.length >= 7 && words.any { w -> runsTogether(w, glued) })
+                    padded.contains(" $alias ") || (glued.length >= 7 && words.any { w -> runsTogether(w, glued) }) ||
+                        completed.any { it.contains(" $alias ") }
                 } else words.any { w -> w == alias || (alias.length >= 5 && runsTogether(w, alias)) }
                 if (hit) {
                     val score = alias.length
