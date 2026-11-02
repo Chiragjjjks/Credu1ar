@@ -11,6 +11,8 @@ import android.os.ext.SdkExtensions
 import android.system.ErrnoException
 import android.system.Os
 import android.system.OsConstants
+import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresExtension
 import java.io.FileDescriptor
 import java.io.IOException
 import java.security.MessageDigest
@@ -43,7 +45,7 @@ internal object PdfText {
 
     /** Blocking. [onPage] gets (page being read, page count), 1-based. */
     fun read(context: Context, uri: Uri, password: String?, onPage: (Int, Int) -> Unit = { _, _ -> }): Result {
-        if (!available()) return Result.Failed(ImportProblem.PHONE_TOO_OLD)
+        if (Build.VERSION.SDK_INT < 31 || !available()) return Result.Failed(ImportProblem.PHONE_TOO_OLD)
         val opened = try {
             context.contentResolver.openFileDescriptor(uri, "r")
         } catch (_: Exception) { // gone, permission revoked, provider crashed
@@ -72,19 +74,13 @@ internal object PdfText {
         }
     }
 
-    private fun render(fd: ParcelFileDescriptor, password: String?, sha: String, onPage: (Int, Int) -> Unit): Result {
-        val params = LoadParams.Builder().apply { if (password != null) setPassword(password) }.build()
-        return try {
+    private fun render(fd: ParcelFileDescriptor, password: String?, sha: String, onPage: (Int, Int) -> Unit): Result =
+        try {
+            // The renderer owns fd from here and closes it; closing it again in read() is a no-op.
             when {
-                // The renderer owns fd from here and closes it; closing it again in read() is a no-op.
-                Build.VERSION.SDK_INT >= 35 -> PdfRenderer(fd, params).use { r ->
-                    val n = r.pageCount
-                    Result.Pages(List(n) { i -> onPage(i + 1, n); r.openPage(i).use { p -> p.textContents.joinToString("\n") { it.text } } }, sha)
-                }
-                Build.VERSION.SDK_INT >= 31 && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13 -> PdfRendererPreV(fd, params).use { r ->
-                    val n = r.pageCount
-                    Result.Pages(List(n) { i -> onPage(i + 1, n); r.openPage(i).use { p -> p.textContents.joinToString("\n") { it.text } } }, sha)
-                }
+                Build.VERSION.SDK_INT >= 35 -> Result.Pages(pagesV(fd, password, onPage), sha)
+                Build.VERSION.SDK_INT >= 31 && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13 ->
+                    Result.Pages(pagesPreV(fd, password, onPage), sha)
                 else -> Result.Failed(ImportProblem.PHONE_TOO_OLD)
             }
         } catch (_: SecurityException) { // locked, or the password didn't open it
@@ -93,6 +89,25 @@ internal object PdfText {
             Result.Failed(ImportProblem.NOT_PDF)
         } catch (_: RuntimeException) {
             Result.Failed(ImportProblem.UNREADABLE)
+        }
+
+    /** Android 15+: the built-in renderer. */
+    @RequiresApi(35)
+    private fun pagesV(fd: ParcelFileDescriptor, password: String?, onPage: (Int, Int) -> Unit): List<String> {
+        val params = LoadParams.Builder().apply { if (password != null) setPassword(password) }.build()
+        return PdfRenderer(fd, params).use { r ->
+            val n = r.pageCount
+            List(n) { i -> onPage(i + 1, n); r.openPage(i).use { p -> p.textContents.joinToString("\n") { it.text } } }
+        }
+    }
+
+    /** Android 12–14 whose system updates brought SDK extension 13: the same renderer, shipped as PdfRendererPreV. */
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+    private fun pagesPreV(fd: ParcelFileDescriptor, password: String?, onPage: (Int, Int) -> Unit): List<String> {
+        val params = LoadParams.Builder().apply { if (password != null) setPassword(password) }.build()
+        return PdfRendererPreV(fd, params).use { r ->
+            val n = r.pageCount
+            List(n) { i -> onPage(i + 1, n); r.openPage(i).use { p -> p.textContents.joinToString("\n") { it.text } } }
         }
     }
 
@@ -122,6 +137,7 @@ internal object PdfText {
     }
 
     /** Copies a pipe into an anonymous in-memory file (never on disk), hashing as it goes. Null if it is too big or fails. */
+    @RequiresApi(Build.VERSION_CODES.R)
     private fun copyToMemory(src: FileDescriptor): Pair<ParcelFileDescriptor, String>? {
         val mem = try { Os.memfd_create("credu1ar-pdf", 0) } catch (_: ErrnoException) { return null }
         try {
