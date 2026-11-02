@@ -16,7 +16,8 @@ $ADB wait-for-device
 case "${1:-}" in
   add)
     ms="$(TZ=Asia/Kolkata date -j -f "%Y-%m-%d %H:%M:%S" "$3:00" +%s)000"
-    $ADB shell "content insert --uri content://sms/inbox --bind address:s:$(q "$2") --bind date:l:$ms --bind read:i:1 --bind body:s:$(q "$4")"
+    # `content` splits bindings on ':', so a colon in the text ("https://", "Ref:") must be escaped as '\:'.
+    $ADB shell "content insert --uri content://sms/inbox --bind address:s:$(q "$2") --bind date:l:$ms --bind read:i:1 --bind body:s:$(q "${4//:/\\:}")"
     ;;
   clear) $ADB shell "content delete --uri content://sms" ;;
   list)  $ADB shell "content query --uri content://sms/inbox --projection _id:address:date" ;;
