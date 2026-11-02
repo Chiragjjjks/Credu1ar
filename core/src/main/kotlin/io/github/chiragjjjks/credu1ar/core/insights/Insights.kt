@@ -193,7 +193,7 @@ object Insights {
 
     // ------------------------------------------------------------------------------------------------ rhythm
 
-    /** [spendPaise] and [count] indexed `[dayOfWeek 0=Mon..6=Sun][hour 0..23]` over the given months. */
+    /** [spendPaise] and [count] indexed `[dayOfWeek 0=Mon..6=Sun][hour 0..23]` over the given months. Rows without a real time are left out. */
     class Rhythm(val spendPaise: Array<LongArray>, val count: Array<IntArray>) {
         val maxSpend: Long get() = spendPaise.maxOf { it.maxOrNull() ?: 0 }
         val busiestCell: Pair<Int, Int>? get() {
@@ -208,7 +208,8 @@ object Insights {
         val spend = Array(7) { LongArray(24) }
         val cnt = Array(7) { IntArray(24) }
         for (t in txns) {
-            if (!t.isSpend || t.occurredAtMillis < sinceMillis) continue
+            // Statement rows carry only a date (stamped 12:00): they would pile up at noon.
+            if (!t.isSpend || !t.timeKnown || t.occurredAtMillis < sinceMillis) continue
             val z = Instant.ofEpochMilli(t.occurredAtMillis).atZone(zone)
             spend[z.dayOfWeek.value - 1][z.hour] += t.amountPaise
             cnt[z.dayOfWeek.value - 1][z.hour]++

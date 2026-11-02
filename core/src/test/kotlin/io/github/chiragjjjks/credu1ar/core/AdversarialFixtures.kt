@@ -171,7 +171,7 @@ object AdversarialFixtures {
             DEBIT, 22_500_000, "Navira Hospital", DOCTOR, "8642", Instrument.TRANSFER, review = false),
         AdversarialFixture("P23 baroda interest credited", "VM-BOBTXN-S",
             "Interest of Rs 143.27 credited to A/C XX8642 on 29-10-26. Avl Bal Rs 10143.27.",
-            CREDIT, 14_327, category = MONEY_IN, tail = "8642", instrument = Instrument.ACCOUNT, review = false),
+            CREDIT, 14_327, category = INTEREST, tail = "8642", instrument = Instrument.ACCOUNT, review = false), // v0.1.3: Interest got its own category (was MONEY_IN)
         AdversarialFixture("P24 yes cheque deposited", "VM-YESBNK-S",
             "Cheque 004163 cleared: Rs 8450 credited to A/C XX8642 from NAVIRA TRADERS on 29-Oct-26.",
             CREDIT, 845_000, "Navira Traders", MONEY_IN, "8642", Instrument.ACCOUNT, review = false),

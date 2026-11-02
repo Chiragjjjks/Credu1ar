@@ -2,12 +2,16 @@ package io.github.chiragjjjks.credu1ar.core.insights
 
 import io.github.chiragjjjks.credu1ar.core.model.Category
 import io.github.chiragjjjks.credu1ar.core.model.Group
+import io.github.chiragjjjks.credu1ar.core.model.Money
 import io.github.chiragjjjks.credu1ar.core.model.Txn
 import java.time.Instant
 import java.time.LocalDate
+import java.time.Month
 import java.time.YearMonth
 import java.time.ZoneId
+import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 /** Days for which we hold a complete record (a statement's period, or the SMS history window). Inclusive. */
 data class CoveredRange(val from: LocalDate, val to: LocalDate)
@@ -106,4 +110,43 @@ object Reports {
             topMerchants = top, moves = moves, perDayPaise = perDay, previousPaise = previous,
         )
     }
+
+    /** A calendar month that statements cover only in part ("16 to 30 September"): no comparison, its own wording. */
+    fun isPartMonth(r: Report): Boolean = r.isCalendarMonth && r.coverage?.partial == true
+
+    /**
+     * The two headline lines above the total. Amounts are whole rupees.
+     *  - a fully covered month: "You spent ₹38,420 in October." / "Food & Drink led at ₹9,860."
+     *  - a part month: "You spent ₹4,079 from 16 to 30 September." / "That's 15 of 30 days."
+     *  - a statement period: "You spent ₹21,593 in these 31 days." / "Transport led at ₹3,100 (14%)."
+     * When money not sorted yet is bigger than the leading group, or at least 25% of spending, line 2 says
+     * "₹15,595 of it isn't sorted yet." instead (a part month keeps its days line). "Led at" never counts unsorted money.
+     */
+    fun headline(r: Report, monthName: (Month) -> String = { it.getDisplayName(TextStyle.FULL, Locale.ENGLISH) }): Insights.Headline {
+        val cov = r.coverage
+        val part = isPartMonth(r) && cov?.firstCovered != null && cov.lastCovered != null
+        val period = when {
+            part -> {
+                val a = cov!!.firstCovered!!
+                val b = cov.lastCovered!!
+                if (a == b) "on ${a.dayOfMonth} ${monthName(a.month)}" else "from ${a.dayOfMonth} to ${b.dayOfMonth} ${monthName(b.month)}"
+            }
+            r.isCalendarMonth -> "in ${monthName(r.from.month)}"
+            else -> "in these ${r.days} days"
+        }
+        val line1 = if (r.spendCount == 0) "You spent nothing $period." else "You spent ${wholeRupees(r.spentPaise)} $period."
+        val top = r.byGroup.firstOrNull()
+        val unsortedLeads = r.unsortedPaise > 0 && (top == null || r.unsortedPaise > top.paise || r.unsortedPaise * 4 >= r.spentPaise)
+        val line2 = when {
+            part -> "That's ${cov!!.coveredDays} of ${cov.totalDays} days."
+            r.spendCount == 0 -> ""
+            unsortedLeads -> "${wholeRupees(r.unsortedPaise)} of it isn't sorted yet."
+            top == null -> ""
+            r.isCalendarMonth -> "${top.group.label} led at ${wholeRupees(top.paise)}."
+            else -> "${top.group.label} led at ${wholeRupees(top.paise)} (${(top.paise * 100 + r.spentPaise / 2) / r.spentPaise}%)."
+        }
+        return Insights.Headline(line1, line2)
+    }
+
+    private fun wholeRupees(paise: Long): String = Money.format((paise + 50) / 100 * 100)
 }

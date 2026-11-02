@@ -39,14 +39,28 @@ object Pipeline {
 
     /** A parsed payment from any source (SMS, notification, statement row) → merchant + category. */
     fun accept(parsed: ParsedTxn, rules: Map<String, Category> = emptyMap()): Accepted {
-        var merchant = MerchantNormalizer.resolve(parsed.payeeName, parsed.vpa, parsed.payeeKind)
+        var merchant = MerchantNormalizer.resolve(parsed.payeeName, parsed.vpa, parsed.payeeKind, parsed.payeeTruncated)
         val categorizer = Categorizer(rules)
-        val cat = categorizer.categorize(merchant, parsed)
-        // No payee in the message ("Payment received on your credit card", "ATM withdrawal"): name it by what it is.
+        var cat = categorizer.categorize(merchant, parsed)
+        // No payee in the message ("Payment received on your credit card", "ATM withdrawal"): name it by what it is,
+        // and let a rule the owner taught for that name apply.
         if (merchant.key == "unknown" && cat.category != Category.UNCATEGORISED) {
-            merchant = merchant.copy(key = cat.category.id, name = cat.category.label)
+            val (key, name) = unnamed(cat.category, parsed.hints)
+            merchant = merchant.copy(key = key, name = name)
+            categorizer.rule(key, parsed.direction)?.let { cat = it }
         }
         return Accepted(parsed, merchant, cat, categorizer.needsReview(cat, parsed.direction))
+    }
+
+    /**
+     * Key and name for a payment whose message names no payee. Usually the category ("card_bill", "Credit-card bill");
+     * statement rows get plainer words. "Own account" never carries the holder's name.
+     */
+    private fun unnamed(c: Category, hints: Set<String>): Pair<String, String> = when {
+        c == Category.BANK_CHARGES -> "bank_charges" to "Bank charges"
+        c == Category.REFUND && "cashback" in hints -> "cashback" to "Cashback"
+        c == Category.SELF_TRANSFER && "own_name" in hints -> "own_account" to "Own account"
+        else -> c.id to c.label
     }
 
     /** Re-categorise an already stored payee after the owner teaches a rule. */
