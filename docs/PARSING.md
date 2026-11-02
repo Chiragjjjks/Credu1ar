@@ -17,7 +17,7 @@ Anything else is `Ignored`: counted, dropped, never stored or logged. A payment-
 
 `sanitise` (newlines → ` | `) → `gate` (cues + rejects) → `amount` (first non-balance amount) → `direction` (the money verb nearest the amount) → `account tail`, `reference`, `VPA`, `date/time` (message date wins over arrival time, absurd dates fall back to arrival) → `payee` (slash format `UPI/P2M/ref/NAME`, then `to|at|towards NAME`, `; NAME credited`, `on NAME`, bracketed name; boilerplate such as "Not you? Call…" is cut first) → `merchant` (rail prefixes stripped, brand directory, glued handles like `apollopharmacy@icici`) → `category` (your rule → hints → brand → name keywords → looks like a person → unknown).
 
-Hints are lowercase tags the categoriser reads: `salary`, `refund`, `card_bill`, `emi`, `rent`, `invest`, `self`, `interest`, `atm`, `mandate`.
+Hints are lowercase tags the categoriser reads: `salary`, `refund`, `card_bill`, `emi`, `rent`, `invest`, `self`, `interest`, `atm`, `mandate`. Statements add `charges`, `cashback`, `neft`, `autopay` and `own_name` (see "Bank statements").
 
 ## Adding or fixing a bank format (the `add-bank-parser` skill does this)
 
@@ -56,6 +56,35 @@ scripts/android-smoke.sh app/build/outputs/apk/debug/app-debug.apk
 - An OTP *challenge* (code next to "OTP") before the money verb is a checkout step; a "never share your OTP" footer is not.
 - Merchant receipts, telco activations and complaint acknowledgements are not bank alerts unless an account is named.
 - Promotional `-P` SMS headers are never payment alerts.
+
+## Bank statements
+
+Code: `core/src/main/kotlin/.../core/statement/` (`Statements.parse`, `KotakLayout`, `StatementTxns`, `StatementMatch`, `OwnName`). Tests: `core/src/test/.../statement/`. Fictional fixtures: `core/src/test/resources/statements/` (see its README). Decision: ADR-015.
+
+**Input.** The text of each PDF page as Android's `PdfRenderer` returns it, one string per page. `Statements.parse` normalises it (NFKC, odd spaces, Unicode minus), tries each layout in `Statements.layouts`, and otherwise says `NoText` (a scan), `NotAStatement` or `UnknownLayout(bankGuess)`.
+
+**Kotak layout** (`KotakLayout`, v0.1.3 reads only this):
+- A row starts with `<#> <dd Mon yyyy>`; its narration may wrap onto more lines; its last line ends with `<amount> <balance>`. Rows are found by their start line, never by where the amounts are, so one odd row can't shift the rest.
+- The Withdrawal and Deposit columns collapse in the text, so the **direction comes from the change in balance**.
+- The reference column (`UPI-…`, `NEFTINW-…`, a wrapped `ONBF-…`) is split off. The full account number (in interest rows) becomes `XX` + last 4.
+- Page headers, footers, the holder's name/address block, "Account Summary" and "Commonly Used Narrations" are skipped. The holder's name is kept in memory only (`StatementHeader.holderName`), to spot own-name transfers.
+- Narrations: `UPI/<payee>/<bank>/<12-digit RRN>/<note>` gives payee, RRN and hints (`refund` for "Refund for U…", `autopay` for "MandateExecu"/"Monthly auto"); a payee of 13+ characters is flagged `payeeTruncated`. `NEFT IN <ref> <sender>` → `neft`; `CASHBACK` → `cashback` + `refund`; `CHRG:` → `charges`; `Int.Pd` → `interest`.
+
+**Completeness checks** (`Statement.issues`; "adds up ✓" only when empty):
+- every row's amount equals its change in balance (`BadDelta`; that row is left out and listed, and the chain re-anchors on its printed balance, so one bad row is one issue);
+- row numbers run 1..N (`IndexGap`);
+- the opening and closing balances match the Account Summary (`OpeningMismatch`, `ClosingMismatch`);
+- the page count matches "Page x of N" (`PageCount`); no empty page (`EmptyPage`); no unreadable table line (`Unread`). Issue messages never contain narration text.
+
+**Rows → payments** (`StatementTxns.accept`): each row becomes a `ParsedTxn` and goes through the same `Pipeline.accept` as SMS, so one categoriser and one set of rules serve both (cut-off names and own-name transfers: `docs/CATEGORIES.md` → "Bank statements"). Each item has a stable `key` (`bank:tail:date:D|C:amount:balanceAfter`, `#2`… for identical rows in one file) so overlapping statements add nothing twice, and is stamped 12:00 IST plus its place in the day with `timeKnown=false` (kept out of the time-of-day chart).
+
+**Matching SMS** (`StatementMatch.assign`, one-to-one): same RRN, direction and amount; else same direction and amount, account tails that don't clash, dates ±1 day, same day first. Two known RRNs that differ never pair.
+
+**Adding a bank** (fixture first, never a real statement):
+1. Write a **fictional** fixture in `core/src/test/resources/statements/`: page text exactly as `PdfRenderer` gives it, pages separated by a line holding only a form feed, invented names, numbers and amounts whose balances add up. Copy only the *layout* of a real file, and add a row to the README.
+2. Add a test like `KotakLayoutTest`: complete, row count, debit and credit totals, wrapped narrations, no header/footer text in any row, a missing page and a wrong amount reported.
+3. Add an object implementing `StatementLayout` (`recognises`, `read`, plus a `narration` function returning `NarrationInfo`), register it in `Statements.layouts` and in `StatementTxns.narration`.
+4. Pin every fixture row's category in a test like `StatementEndToEndTest`. Never weaken a pinned row to make a change pass; change the expectation only when the new category is more correct, and say so in the commit.
 
 ## Known gaps
 
