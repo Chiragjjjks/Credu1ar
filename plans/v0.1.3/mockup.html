@@ -1,0 +1,123 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  :root{--ink:#EDEDED;--mid:#A3A3A3;--dim:#858585;--line:rgba(255,255,255,.08);--hot:rgba(255,255,255,.18);--panel:#050505;--in:#68D98F;--amber:#D8A548;
+    --sans:Geist,Inter,-apple-system,"SF Pro Text",system-ui,sans-serif;--mono:"Geist Mono","SF Mono",ui-monospace,Menlo,monospace;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  .row{display:flex;gap:16px;align-items:flex-start}
+  .col{flex:1;min-width:0}
+  .cap{font:500 11px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted-foreground,#888);margin:0 0 8px 2px}
+  .phone{background:#000;color:var(--ink);border-radius:var(--radius);padding:16px;border:1px solid #1d1d1d;font-family:var(--sans);
+    background-image:radial-gradient(120% 60% at 0% 0%,rgba(59,127,224,.10),transparent 60%)}
+  .strip{display:flex;align-items:center;gap:6px;font:500 9.5px var(--mono);letter-spacing:.12em;color:var(--mid);margin-bottom:16px}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--in)}
+  .eb{font:500 10px var(--mono);letter-spacing:.14em;color:var(--dim);text-transform:uppercase;margin:0 0 10px}
+  .eb .r{float:right;color:var(--ink)}
+  h1{font:600 21px/1.18 var(--sans);letter-spacing:-.03em}
+  h1 .d{color:var(--dim);display:block}
+  p.body{font:400 12.5px/1.5 var(--sans);color:var(--mid);margin-top:10px}
+  .btn{margin-top:16px;border-radius:999px;padding:12px 14px;text-align:center;font:500 13.5px var(--sans);color:#fff;
+    background:linear-gradient(135deg,#5FD0E6,#3B7FE0 48%,#2C3FB8)}
+  .ghost{margin-top:10px;border-radius:999px;padding:10px 14px;text-align:center;font:500 12.5px var(--sans);color:var(--ink);border:1px solid var(--hot)}
+  .fine{font:500 9.5px/1.5 var(--mono);letter-spacing:.08em;color:var(--dim);text-transform:uppercase;margin-top:10px;text-align:center}
+  .card{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:12px;margin-top:14px}
+  .sheetT{font:500 14px var(--sans)}
+  .field{margin-top:10px;border:1px solid var(--hot);border-radius:10px;padding:10px;font:500 13px var(--mono);color:var(--ink);letter-spacing:.3em}
+  .hint{font:400 11px/1.45 var(--sans);color:var(--dim);margin-top:8px}
+  .prog{height:4px;border-radius:4px;background:#111;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:68%;border-radius:4px;background:linear-gradient(90deg,#5FD0E6,#3B7FE0,#2C3FB8)}
+  .hero{font:600 40px/1 var(--sans);letter-spacing:-.04em;margin-top:16px;font-variant-numeric:tabular-nums}
+  .heroL{font:500 9.5px var(--mono);letter-spacing:.14em;color:var(--dim);margin-top:6px}
+  .stats{display:flex;border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:10px 12px;margin-top:14px}
+  .stats div{flex:1}
+  .stats b{display:block;font:500 9px var(--mono);letter-spacing:.14em;color:var(--dim);margin-bottom:4px}
+  .stats span{font:500 13px var(--mono)}
+  .bars{margin-top:8px}
+  .bar{padding:7px 0;cursor:default}
+  .bar .t{display:flex;justify-content:space-between;align-items:baseline;font:400 12.5px var(--sans)}
+  .bar .t .a{font:500 12.5px var(--mono)}
+  .bar .s{display:flex;justify-content:space-between;font:500 9px var(--mono);letter-spacing:.08em;color:var(--dim);margin-top:4px}
+  .track{height:7px;margin-top:5px;border-radius:4px;background:#0d0d0d}
+  .fill{height:7px;border-radius:4px}
+  .bar:hover .track{outline:1px solid var(--hot)}
+  .sw{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:7px;vertical-align:1px}
+  .mr{display:flex;justify-content:space-between;font:400 12px var(--sans);padding:6px 0;border-top:1px solid var(--line)}
+  .mr:first-child{border-top:0}
+  .mr .a{font:500 12px var(--mono)}
+  .mr .c{color:var(--dim);font:500 10px var(--mono)}
+  .moves{font:400 11.5px/1.5 var(--sans);color:var(--mid)}
+  .moves b{font-weight:500;color:var(--ink)}
+  .chip{display:inline-block;margin-top:12px;border:1px solid rgba(216,165,72,.55);color:var(--amber);border-radius:10px;padding:6px 10px;font:500 10px var(--mono);letter-spacing:.1em}
+  .note{font:400 12.5px/1.5 var(--font-sans,system-ui);color:var(--muted-foreground,#999);margin-top:12px}
+</style></head>
+<body>
+<div class="row">
+  <div class="col">
+    <div class="cap">1 · Start (no SMS needed)</div>
+    <div class="phone">
+      <div class="strip"><span class="dot" style="background:#6B6B6B"></span>SMS OFF · STATEMENT MODE</div>
+      <div class="eb">01 — Start</div>
+      <h1>See where October went.<span class="d">Upload your bank statement.</span></h1>
+      <p class="body">Use the monthly statement your bank emails you, or download it from net banking. It is read on this phone and never uploaded.</p>
+      <div class="btn">Upload October statement</div>
+      <div class="fine">PDF · Excel · CSV &nbsp;·&nbsp; locked PDFs OK</div>
+      <div class="ghost">Or link SMS for live tracking</div>
+
+      <div class="card">
+        <div class="sheetT">This statement is locked</div>
+        <div class="field">••••••••</div>
+        <div class="hint">Your bank's statement password (often in the email). Used once to open the file, never saved.</div>
+      </div>
+
+      <div class="card">
+        <div class="eb" style="margin:0"><span class="dot" style="display:inline-block;margin-right:6px"></span>Reading statement</div>
+        <div class="prog"><i></i></div>
+        <div class="heroL" style="margin-top:8px">1 OCT → 31 OCT · 143 / 210 ROWS</div>
+      </div>
+      <p class="hint" style="margin-top:12px">The file itself is not kept. Only the payments read from it are saved, like SMS ones.</p>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="cap">2 · Last month, at a glance</div>
+    <div class="phone">
+      <div class="strip"><span class="dot"></span>FROM YOUR STATEMENT · 210 ROWS</div>
+      <div class="eb">01 — October 2026 <span class="r">‹ OCT ›</span></div>
+      <h1>You spent ₹38,420 in October.<span class="d">Food &amp; Drink led at ₹9,860.</span></h1>
+      <div class="hero">₹38,420</div>
+      <div class="heroL">SPENT IN OCTOBER</div>
+      <div class="stats">
+        <div><b>MONEY IN</b><span style="color:var(--in)">+₹62,000</span></div>
+        <div><b>PAYMENTS</b><span>87</span></div>
+        <div><b>PER DAY</b><span>₹1,239</span></div>
+      </div>
+
+      <div class="eb" style="margin-top:18px">02 — Where it went</div>
+      <div class="bars" id="bars"></div>
+
+      <div class="eb" style="margin-top:14px">03 — Top places</div>
+      <div id="merch"></div>
+
+      <div class="eb" style="margin-top:14px">04 — Not spending</div>
+      <div class="moves"><b>₹20,300</b> moved, not counted above: card bill ₹12,300 · own accounts ₹5,000 · SIP ₹3,000</div>
+      <div class="chip">NEEDS A LOOK · 6 →</div>
+    </div>
+  </div>
+</div>
+<p class="note">Tap any bar to see its payments and the split inside it (for example Groceries → quick commerce vs provision store). Colours are the app's fixed category colours. All figures here are made up.</p>
+
+<script>
+const groups=[["Food & Drink","#3987E5",9860,31],["Shopping","#D55181",8240,9],["Groceries","#D95926",7130,24],["Home & Bills","#C98500",6500,4],
+["Transport","#199E70",3210,11],["Fun & Subscriptions","#9085E9",1480,3],["Health","#008300",1150,2],["People & Cash","#E66767",600,2],["Other","#6B6B6B",250,1]];
+const total=groups.reduce((s,g)=>s+g[2],0), max=groups[0][2];
+const inr=n=>"₹"+n.toLocaleString("en-IN");
+document.getElementById("bars").innerHTML=groups.map(([n,c,v,k])=>{
+  const pct=Math.round(v*100/total);
+  return `<div class="bar" title="${n}: ${inr(v)} · ${pct}% of spend · ${k} payment${k>1?"s":""}">
+    <div class="t"><span><i class="sw" style="background:${c}"></i>${n}</span><span class="a">${inr(v)}</span></div>
+    <div class="track"><div class="fill" style="width:${Math.max(2,v*100/max)}%;background:${c}"></div></div>
+    <div class="s"><span>${pct}% OF SPEND</span><span>${k} PAYMENT${k>1?"S":""}</span></div></div>`}).join("");
+const m=[["Swiggy","Food delivery",4120,12],["Amazon","Online shopping",3890,4],["Zepto","Quick commerce",3450,18],["Uber","Cabs & autos",1870,7],["Myntra","Fashion",1640,1]];
+document.getElementById("merch").innerHTML=m.map(([n,c,v,k])=>`<div class="mr"><span>${n} <span class="c">· ${c} · ${k}×</span></span><span class="a">${inr(v)}</span></div>`).join("");
+</script>
+</body></html>
