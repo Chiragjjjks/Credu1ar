@@ -11,6 +11,8 @@ import io.github.chiragjjjks.credu1ar.core.model.Source
 import io.github.chiragjjjks.credu1ar.core.model.Txn
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
+import kotlin.math.abs
 
 /** Statement rows → the same [Accepted] payments the SMS path produces, so one categoriser and one set of rules serve both. */
 object StatementTxns {
@@ -108,6 +110,47 @@ object StatementMatch {
         val accountTail: String?,
     )
 
-    /** Index into [items] → id of the existing row it is the same payment as. */
-    fun assign(items: List<StatementTxns.Item>, candidates: List<Candidate>): Map<Int, Long> = emptyMap() // TODO(agent A): RRN pass, then amount+direction+date±1 pass
+    /**
+     * Index into [items] → id of the existing row it is the same payment as. Pure; each candidate is claimed once.
+     *  1. Same UPI reference (RRN), direction and amount: the same payment whatever the dates say.
+     *  2. Otherwise same direction and amount, account tails that don't clash, and dates within ±1 day, same-day
+     *     pairs first. Two ₹40 chais on one day with one SMS: one is matched, the other stays a new row.
+     *     Two known RRNs that differ are never the same payment.
+     */
+    fun assign(items: List<StatementTxns.Item>, candidates: List<Candidate>): Map<Int, Long> {
+        val out = LinkedHashMap<Int, Long>()
+        val claimed = HashSet<Int>()
+        fun sameMoney(i: StatementTxns.Item, c: Candidate) =
+            i.accepted.parsed.direction == c.direction && i.accepted.parsed.amountPaise == c.amountPaise
+        fun claim(itemIndex: Int, ok: (Candidate) -> Boolean) {
+            val ci = candidates.indices.firstOrNull { it !in claimed && ok(candidates[it]) } ?: return
+            claimed += ci
+            out[itemIndex] = candidates[ci].id
+        }
+
+        items.forEachIndexed { ii, item ->
+            val ref = rrn(item.accepted.parsed.reference) ?: return@forEachIndexed
+            claim(ii) { c -> rrn(c.reference) == ref && sameMoney(item, c) }
+        }
+        for (gap in 0L..1L) items.forEachIndexed { ii, item ->
+            if (ii in out) return@forEachIndexed
+            val ref = rrn(item.accepted.parsed.reference)
+            claim(ii) { c ->
+                sameMoney(item, c) && !tailsClash(item.accepted.parsed.accountTail, c.accountTail) &&
+                    abs(ChronoUnit.DAYS.between(item.row.date, c.date)) == gap &&
+                    !(ref != null && rrn(c.reference).let { it != null && it != ref })
+            }
+        }
+        return out
+    }
+
+    /** A UPI reference: 10–14 digits and nothing else (Kotak's own `UPI-7000…` column is not one). */
+    private fun rrn(ref: String?): String? = ref?.trim()?.takeIf { it.length in 10..14 && it.all(Char::isDigit) }
+
+    /** Both tails known and neither ends with the other ("7890" vs "890" is fine; "7890" vs "1234" clashes). */
+    private fun tailsClash(a: String?, b: String?): Boolean {
+        val x = a?.filter(Char::isDigit).orEmpty()
+        val y = b?.filter(Char::isDigit).orEmpty()
+        return x.isNotEmpty() && y.isNotEmpty() && !x.endsWith(y) && !y.endsWith(x)
+    }
 }
