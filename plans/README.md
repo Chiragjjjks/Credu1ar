@@ -62,4 +62,4 @@ One or two lines: the thing being worked on this minute.
 | 1 | 1 | 2026-10-29 | Research, plan, repo, core parser, app skeleton (see file) |
 | 1 | 2 | 2026-10-30 | Play Protect block explained (`docs/INSTALL.md`); v0.1.1 |
 | 1 | 3 | 2026-10-31 | Automatic month import on SMS link; Play Protect answered; v0.1.2 |
-| 1 | 5 | 2026-11-02 | Plan + mockup: upload last month's bank statement → simple report (v0.1.3) |
+| 1 | 5 | 2026-11-02 | Bank statements (Kotak PDF) + statement-only edition; 6 Claude agents; v0.1.3 |

@@ -30,7 +30,31 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 5. Decisions with lasting effect also go in `docs/DECISIONS.md` (short ADR entries).
 6. Keep the active version checklist (`plans/v0.2.0/plan.md`) current in the same commit as each task. Record `TODO`, `DOING`, `DONE`, `BLOCKED`, `DEFERRED` or `NO`; completed tasks need evidence, and blocked/deferred/dropped tasks need a reason.
 
-## Current state: v0.1.2 released (2026-10-31, week 1 day 3) — automatic month import; Play Protect answered
+## Current state: v0.1.3 (2026-11-02, week 1 day 5) — bank statements + statement-only edition
+
+**Day 5 (2026-11-02):**
+- **Owner's requests:**
+  - "upload last month's bank statement" and get a simple Navi-like report with a bar per category ("since the SMS is not working properly");
+  - then, with their real Kotak PDF: "think about multiple months, create multiple agents, talk to each other, update, then build";
+  - answers: build the statement-only APK ("Go ahead"); the phone runs Android 15+.
+- **Agents (Claude only):**
+  - design round: designer, architect, critic (2 rounds), recorded in ADR-015/016;
+  - three builders in worktrees, merged A → B → C: A `:core` categories/matching/reports, B DB v2 + PDF import + `full`/`statement` flavors + CI, C UI;
+  - an independent reviewer found 0 blockers and 4 should-fix, all fixed in `f735aae`.
+- **What it does:**
+  - Android's own `PdfRenderer` text API reads the PDF (0 bytes added).
+  - `core/statement/KotakLayout` turns rows into payments, with direction from the running balance and completeness checks (balance chain, row numbers, opening/closing vs summary, page count).
+  - Row keys are stable, so re-imports and overlaps add nothing; SMS↔statement rows match both ways.
+  - Pulse has `BY STATEMENT · BY MONTH` with coverage-aware headlines, a "Not sorted yet" bar and a bar → payments sheet; Insights is coverage-aware too.
+  - The holder's name, address and full account number are never stored.
+- **Verified:**
+  - 73 JVM tests; lint 0 errors on both editions; `statement-smoke.sh` PASS (both editions); `android-smoke.sh` PASS.
+  - The v1→v2 migration kept 237 rows.
+  - The real picker flow was tested on an emulator.
+  - The owner's real statement imported complete, matching the bank's closing balance (read privately on the emulator, then wiped; nothing committed).
+- **Release:** see the day-5 journal for CI/tag status.
+
+### v0.1.2 released (2026-10-31, week 1 day 3) — automatic month import; Play Protect answered
 
 **Day 3 (2026-10-31):** owner asked to (1) solve the Play Protect block "like OTP auto-fill", (2) make linking SMS fill the app by itself: on Nov 1 all of October, on Nov 15 only Nov 1–15, (3) one more release, using several **Claude** agents (no Codex). Three Claude agents (Play Protect research, design, critic) reported; a fourth reviewed the code (no blockers, 5 should-fix, all fixed in `642b9c9`).
 - **Play Protect (ADR-014):** cannot be solved inside the app. India blocks internet-sideloaded apps that *declare* `RECEIVE_SMS`/`READ_SMS`/notification listener/accessibility. OTP APIs can't read bank alerts. Routes: adb from this Mac (`scripts/phone-install.sh`, USB or Wi-Fi, privately signed so updates keep data) > scan pause (not guaranteed) > Play internal testing (owner's call: $25, ID, declaration, reverses "no Play Store"). `docs/INSTALL.md` rewritten.
@@ -66,8 +90,8 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 
 ## Next, in order
 
-0. **v0.1.3, bank statement upload (owner request 2026-11-02):** follow [`plans/v0.1.3/plan.md`](plans/v0.1.3/plan.md) (mockup alongside). The owner sends a real statement; it never enters git or docs, and only a fictional copy of its layout becomes a fixture.
-1. Owner: get the app onto the phone. Easiest: plug in or pair Wi-Fi debugging and let the agent run `scripts/phone-install.sh` (privately signed, updates in place). Then `docs/PHONE-TEST.md` and paste back the Diagnostics report; add real formats as fixtures before changing parser rules.
+0. Owner: install `Credu1ar-v0.1.3-statement.apk` from Releases (no SMS, installs from the browser), add the Kotak PDF, then **Mark these N as people** in Needs a look; report what looks wrong. Another bank = send one statement; make a fictional fixture of its layout first (`core/src/test/resources/statements/README.md`), never commit the real file.
+1. Owner (for live SMS): get the full app onto the phone. Easiest: plug in or pair Wi-Fi debugging and let the agent run `scripts/phone-install.sh` (privately signed, updates in place). Then `docs/PHONE-TEST.md` and paste back the Diagnostics report; add real formats as fixtures before changing parser rules.
 2. Owner: run `scripts/set-signing-secrets.sh` (personal `gh` login) so Releases stop using a new throwaway key each time. Decide whether to pursue Play internal testing (ADR-014, Route C).
 3. Follow [`plans/v0.2.0/plan.md`](plans/v0.2.0/plan.md): rules editor, then merchant pages and category budgets. Later releases need fresh approval.
 

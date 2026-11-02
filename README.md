@@ -22,9 +22,12 @@ Android only (sideloaded APK, Android 8+). Personal project, not affiliated with
 
 ## Install
 
-Download `Credu1ar-vX.Y.Z-android.apk` from [Releases](https://github.com/Chiragjjjks/Credu1ar/releases/latest) and open it.
+Each [release](https://github.com/Chiragjjjks/Credu1ar/releases/latest) has two APKs:
 
-Because Credu1ar reads your payment SMS, Google Play Protect in India **blocks** it when it is downloaded from a browser (it blocks every sideloaded app that asks for SMS). No app change can lift that. The reliable way in is installing from a computer over USB or Wi-Fi (`scripts/phone-install.sh`), which the block does not cover. On the phone alone you can try pausing **Play Protect → Scan apps** for the one install. Full steps, the "why not like OTP auto-fill" answer and the Android 13+ **Allow restricted settings** step: **[docs/INSTALL.md](docs/INSTALL.md)**.
+- **`Credu1ar-vX.Y.Z-statement.apk`**: reads the bank statements you add (Kotak PDF so far) and never asks for SMS. It installs from the browser like any app.
+- **`Credu1ar-vX.Y.Z-android.apk`**: the full app (SMS + notifications + statements).
+
+Because the full app reads your payment SMS, Google Play Protect in India **blocks** it when it is downloaded from a browser (it blocks every sideloaded app that asks for SMS). No app change can lift that. The reliable way in is installing from a computer over USB or Wi-Fi (`scripts/phone-install.sh`), which the block does not cover. On the phone alone you can try pausing **Play Protect → Scan apps** for the one install. Full steps, the "why not like OTP auto-fill" answer and the Android 13+ **Allow restricted settings** step: **[docs/INSTALL.md](docs/INSTALL.md)**.
 
 ## Develop
 

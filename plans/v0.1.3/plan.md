@@ -1,6 +1,6 @@
 # v0.1.3: upload last month's bank statement, see where it went
 
-**Status:** building · **Updated:** 2026-11-02 · **Last release:** v0.1.2
+**Status:** release pending CI · **Updated:** 2026-11-02 · **Last release:** v0.1.2
 
 Read [AGENTS.md](../../AGENTS.md) first. This is the checklist for the statement feature; daily work goes in `plans/week-NN/day-N/planned.md`. Status words are the same as in [v0.2.0](../v0.2.0/plan.md). v0.2.0 keeps its scope (rules editor, merchant pages, budgets) and follows this release.
 
@@ -133,9 +133,9 @@ Builders are Claude agents in separate git worktrees, each owning distinct files
 |---|---|---|---|
 | 0 | DONE | Shared foundation: Kotak page-text parser + completeness checks, statement types, `StatementTxns` keys, `Reports` (coverage, report), `Source.STATEMENT`, new categories, `Pipeline.accept`, app stubs (`StatementImport`, Repo statement methods), `BuildConfig.SMS_CAPTURE`. | 46 core tests green (11 new on fictional fixtures); app builds. Real statement: 202/202 rows, 0 balance mismatches (prototype, no data copied). |
 | 1 | DONE | Agent discussion: designer, architect, critic, then a critic ruling. | Summarised above; ADR-015/016. |
-| 2 | TODO | **Agent A (`:core`):** categoriser and merchant fixes, own-name, `StatementMatch`, refine `Reports`, rhythm skips `timeKnown=false`. | Core tests; no existing test weakened. |
-| 3 | TODO | **Agent B (data, ingest, build):** DB v2 migration, Repo import/merge/dedup/coverage/delete, `PdfText` + `StatementImport`, flavors `full`/`statement`, CI publishes both APKs, debug import hook, smoke test still passes. | Migration keeps v1 data; same file twice → +0 rows; overlap → 41 rows. |
-| 4 | TODO | **Agent C (UI):** the button, picker, password sheet, progress/result copy, Pulse toggle + report + Not sorted bar + bar sheet, System → Bank statements, statement edition hides SMS steps. | Emulator screenshots checked by eye. |
-| 5 | TODO | Merge, then end-to-end on the emulator with the fictional fixture PDFs, and privately with the owner's real file (totals match the bank's summary). | Journal; no personal data written down. |
-| 6 | TODO | Independent Claude review; fix findings. | Review summary in the journal. |
-| 7 | TODO | Release v0.1.3 (both APKs) under the standing approval once the exact-commit CI is green. | Release page and checksums checked. |
+| 2 | DONE | **Agent A (`:core`):** categoriser and merchant fixes, own-name, `StatementMatch`, refine `Reports`, rhythm skips `timeKnown=false`. | Merged; 73 core tests (one SMS expectation changed on purpose: interest → INTEREST). |
+| 3 | DONE | **Agent B (data, ingest, build):** DB v2 migration, Repo import/merge/dedup/coverage/delete, `PdfText` + `StatementImport`, flavors `full`/`statement`, CI publishes both APKs, debug import hook, smoke test still passes. | Migration kept 237 rows; statement smoke PASS (both editions): +0 on re-import, 41 with overlap, SMS↔statement one row. |
+| 4 | DONE | **Agent C (UI):** the button, picker, password sheet, progress/result copy, Pulse toggle + report + Not sorted bar + bar sheet, System → Bank statements, statement edition hides SMS steps. | Screenshots by C and the lead; real picker flow on the emulator. |
+| 5 | DONE | Merge, then end-to-end on the emulator with the fictional fixture PDFs, and privately with the owner's real file (totals match the bank's summary). | `272305b`: real statement complete (privately, then wiped); headline and Insights fixes. |
+| 6 | DONE | Independent Claude review; fix findings. | 0 blockers, 4 should-fix + nits → `f735aae`. |
+| 7 | DOING | Release v0.1.3 (both APKs) under the standing approval once the exact-commit CI is green. | Release page and checksums checked. |

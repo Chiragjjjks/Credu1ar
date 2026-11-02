@@ -6,7 +6,18 @@ Credu1ar reads your payment SMS, so it asks for the SMS and notification permiss
 
 **Why can't it work like OTP auto-fill?** OTP auto-fill works because the sender puts a secret code for that one app inside the message, or because you tap "Allow" for that single message within 5 minutes. Banks don't put our code in their debit alerts, and tapping for every alert is not tracking. So that route cannot capture spending.
 
-Pick one of the routes below. **Route A is the one we recommend.**
+Pick one of the routes below. **Route 0 is the quickest; Route A gives you everything.**
+
+## Route 0 — the statement edition (no SMS, installs from the browser)
+
+Since v0.1.3 each release also has **`Credu1ar-vX.Y.Z-statement.apk`**. It reads the bank statements you add (Kotak PDF so far: the monthly statement Kotak emails, or one downloaded from net banking for any date range) and **never asks for SMS or notification access**. The Play Protect block is only for apps that ask for those permissions, so this edition installs like any downloaded app. It cannot read SMS at all; nothing is hidden.
+
+1. Download `Credu1ar-vX.Y.Z-statement.apk` from [Releases](https://github.com/Chiragjjjks/Credu1ar/releases/latest) and open it. Android may ask you to allow installs from your browser or Files app.
+2. Open Credu1ar → **Add bank statement** → pick the PDF. If it is locked, type the statement password (often printed in the bank's email). It is used once and never saved.
+3. The app reads every row, checks that they add up to the closing balance, and shows where the money went. Add more statements any time; a repeated or overlapping statement never adds a payment twice.
+
+Want live SMS tracking later? Uninstall the statement edition and install the full app by Route A. The two editions don't share data (each build has its own signing key until the project's signing secrets are set).
+
 
 ## Route A — install from the Mac, over USB or Wi-Fi (recommended)
 
