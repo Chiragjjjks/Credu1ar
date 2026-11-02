@@ -125,6 +125,16 @@ if [ $FULL = 1 ]; then
 fi
 expect "statements left" "$(q "select count(*) from statement")" 0
 
+# Full edition: SMS first, then the statement. The statement row joins the SMS row (same UPI reference) instead of adding one.
+if [ $FULL = 1 ]; then
+  ./scripts/inject.sh wipe >/dev/null
+  ./scripts/inject.sh sms-at 1793538000000 VM-KOTAKB-S "Sent Rs.15000.00 from Kotak Bank AC X7890 to meena.rao@okaxis on 01-11-26.UPI Ref 610000000033." >/dev/null; sleep 1
+  expect "rows from the SMS alone" "$(q "select count(*) from txn")" 1
+  has "the statement after its SMS" "$(./scripts/inject.sh stmt oct.pdf)" rows=8 added=7 matched=1
+  expect "rows after SMS then statement" "$(q "select count(*) from txn")" 8
+  expect "that row (source/has statement key/time known)" "$(q "select source||'/'||(stmt_key is not null)||'/'||time_known from txn where amount_paise = 1500000")" "sms/1/1"
+fi
+
 # A statement where one row's amount doesn't match its balance change: that row is left out (and listed), the rest
 # import, and "Couldn't read" gets one entry for the import (counts only), not one per row, and not again for the same file.
 ./scripts/inject.sh wipe >/dev/null

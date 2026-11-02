@@ -179,7 +179,16 @@ class AppModel(private val app: Context) {
         val by = this.by
         val month = this.month
         val view = pulseView(txns, statements, ranges, now, by, month)
-        val s = Insights.monthSummary(txns, month, now)
+        // A month (or the one before it) that statements only partly cover can't be compared: say which days it
+        // covers instead, and show no movers (ADR-015). Its daily average is over the covered days only.
+        fun cov(m: YearMonth) = Reports.coverage(ranges, m.atDay(1), m.atEndOfMonth())
+        val touched = ranges.isNotEmpty() && (cov(month).coveredDays > 0 || cov(month.minusMonths(1)).coveredDays > 0)
+        val comparable = !touched || (cov(month).full && cov(month.minusMonths(1)).full)
+        val s = Insights.monthSummary(txns, month, now).let { sum ->
+            val c = cov(month)
+            if (comparable || !c.partial || c.lastCovered == null) sum
+            else sum.copy(daysElapsed = c.lastCovered!!.dayOfMonth, dailyBurnPaise = Reports.month(txns, month, ranges).perDayPaise)
+        }
         val split = Insights.groceriesSplit(s)
         val ticker = txns.take(9).map { t ->
             val sign = if (t.direction == Direction.DEBIT) "−" else "+"
@@ -191,8 +200,8 @@ class AppModel(private val app: Context) {
         val historyFrom = if (BuildConfig.SMS_CAPTURE && (n("history_from") > 0 || repo.earliestSmsAt() != null)) historyStart else 0L
         val next = UiState(
             ready = true, now = now, month = month, txns = txns, summary = s, split = split,
-            headline = Insights.headline(s, split),
-            movers = Insights.movers(txns, month, now),
+            headline = if (comparable) Insights.headline(s, split) else Reports.headline(Reports.month(txns, month, ranges)),
+            movers = if (comparable) Insights.movers(txns, month, now) else emptyList(),
             leaks = Insights.leaks(txns, month),
             recurring = Insights.recurring(txns, now),
             rhythm = Insights.rhythm(txns, now - 90L * 24 * 3600 * 1000),
@@ -257,6 +266,19 @@ class AppModel(private val app: Context) {
         }
         by = PulseBy.STATEMENT
         statementId = statements.first().id
+        month = mainMonth(statements.first()) // Insights and BY MONTH follow the statement, not an empty current month
+    }
+
+    /** The calendar month a statement covers most (the later one on a tie). */
+    private fun mainMonth(st: StatementRecord): YearMonth {
+        var m = YearMonth.from(st.from)
+        var best = m; var bestDays = -1
+        while (!m.isAfter(YearMonth.from(st.to))) {
+            val days = Reports.coverage(listOf(CoveredRange(st.from, st.to)), m.atDay(1), m.atEndOfMonth()).coveredDays
+            if (days >= bestDays) { best = m; bestDays = days }
+            m = m.plusMonths(1)
+        }
+        return best
     }
 
     private fun access(): Access {
@@ -282,15 +304,7 @@ class AppModel(private val app: Context) {
         val s = _state.value
         if (b == by || s.statements.isEmpty()) { by = b; refresh(); return }
         if (b == PulseBy.MONTH) {
-            val st = s.statements.firstOrNull { it.id == statementId } ?: s.statements.first()
-            var m = YearMonth.from(st.from)
-            var best = m; var bestDays = -1
-            while (!m.isAfter(YearMonth.from(st.to))) {
-                val days = Reports.coverage(listOf(CoveredRange(st.from, st.to)), m.atDay(1), m.atEndOfMonth()).coveredDays
-                if (days >= bestDays) { best = m; bestDays = days }
-                m = m.plusMonths(1)
-            }
-            month = best
+            month = mainMonth(s.statements.firstOrNull { it.id == statementId } ?: s.statements.first())
         } else {
             val first = month.atDay(1); val last = month.atEndOfMonth()
             s.statements.firstOrNull { !it.to.isBefore(first) && !it.from.isAfter(last) }?.let { statementId = it.id }
@@ -298,7 +312,11 @@ class AppModel(private val app: Context) {
         by = b
         refresh()
     }
-    fun showStatement(id: Long) { statementId = id; by = PulseBy.STATEMENT; refresh() }
+    fun showStatement(id: Long) {
+        statementId = id; by = PulseBy.STATEMENT
+        _state.value.statements.firstOrNull { it.id == id }?.let { month = mainMonth(it) }
+        refresh()
+    }
 
     fun setCategory(id: Long, category: Category, remember: Boolean) { scope.launch(Dispatchers.IO) { repo.setCategory(id, category, remember) } }
 

@@ -31,7 +31,7 @@ fun InsightsScreen(s: AppModel.UiState, model: AppModel, nav: Nav) {
         if (sum == null || sum.spendCount == 0) {
             item {
                 Spacer(Modifier.height(24.dp))
-                Headline("Nothing to analyse", "for ${Fmt.month(s.month).lowercase()} yet.")
+                Headline("Nothing to analyse", "for ${Fmt.monthName(s.month)} yet.")
                 Spacer(Modifier.height(10.dp))
                 Txt("Once a few payments are captured, this page shows where the money went, what changed, and what repeats.", T.Body, color = C.Mid)
             }

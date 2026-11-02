@@ -203,6 +203,8 @@ fun reportHeadline(r: Reports.Report): Pair<String, String?> {
         r.isCalendarMonth && c?.partial == true -> "That's ${c.coveredDays} of ${c.totalDays} days."
         r.spentPaise == 0L -> if (r.incomePaise > 0) "${rupeesWhole(r.incomePaise)} came in." else null
         lead == null -> "None of it is sorted yet."
+        // Naming a leader is misleading while most of the money is still unsorted (same rule as Reports.headline).
+        r.unsortedPaise > lead.paise || r.unsortedPaise * 4 >= r.spentPaise -> "${rupeesWhole(r.unsortedPaise)} of it isn't sorted yet."
         else -> "${lead.group.label} led at ${rupeesWhole(lead.paise)}."
     }
     return line1 to line2
