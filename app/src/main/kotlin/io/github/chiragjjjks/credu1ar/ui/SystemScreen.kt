@@ -34,6 +34,8 @@ interface Host {
     fun openBattery()
     fun exportCsv()
     fun copy(label: String, text: String)
+    /** Android's own file picker, PDFs only. No storage permission; nothing about the file is kept. */
+    fun pickStatements()
 }
 
 @Composable
