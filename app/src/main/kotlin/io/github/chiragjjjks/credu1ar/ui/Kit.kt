@@ -69,6 +69,10 @@ fun Txt(text: String, style: TextStyle = T.Body, modifier: Modifier = Modifier, 
 fun rupees(paise: Long, withSymbol: Boolean = true): String =
     if (LocalHideAmounts.current) (if (withSymbol) "₹" else "") + "•••••" else Money.format(paise, withSymbol)
 
+/** Totals in summaries (report headline, bars, stats): rounded to the nearest rupee. Rows stay exact. */
+@Composable
+fun rupeesWhole(paise: Long): String = rupees((paise + 50) / 100 * 100)
+
 @Composable
 fun LiveDot(color: Color = C.MoneyIn, size: Dp = 7.dp, pulse: Boolean = true) {
     val t = rememberInfiniteTransition(label = "live")
@@ -130,9 +134,10 @@ fun ChipFlow(content: @Composable () -> Unit) {
 @Composable
 fun PillButton(label: String, primary: Boolean = false, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
     val shape = RoundedCornerShape(50)
-    val base = modifier.clip(shape)
+    // Disabled dims the whole pill, gradient included, so a disabled primary never reads as live.
+    val base = modifier.alpha(if (enabled) 1f else 0.4f).clip(shape)
     val styled = if (primary) base.background(C.Brand) else base.border(1.dp, C.LineHot, shape)
-    Box(styled.pressable(enabled = enabled, onClick = onClick).padding(horizontal = 20.dp, vertical = 12.dp).alpha(if (enabled) 1f else 0.4f), contentAlignment = Alignment.Center) {
+    Box(styled.pressable(enabled = enabled, onClick = onClick).padding(horizontal = 20.dp, vertical = 12.dp), contentAlignment = Alignment.Center) {
         Txt(label, T.Body.copy(fontFamily = Fonts.Sans), color = if (primary) Color.White else C.Ink, maxLines = 1)
     }
 }

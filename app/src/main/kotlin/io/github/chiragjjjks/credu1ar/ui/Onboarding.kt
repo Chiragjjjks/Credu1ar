@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -19,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.github.chiragjjjks.credu1ar.BuildConfig
 
 /**
  * "Arm it": the signal-chain walkthrough. Each step shows a live dot that turns green the instant Android grants it,
@@ -30,27 +32,44 @@ fun ArmScreen(s: AppModel.UiState, model: AppModel, host: Host, onClose: () -> U
     val a = s.access
     val needsUnlock = Build.VERSION.SDK_INT >= 33
 
+    val sms = BuildConfig.SMS_CAPTURE
     Column(Modifier.fillMaxSize().background(C.Black).statusBarsPadding().navigationBarsPadding()) {
         Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Eyebrow("Arm it", live = true, modifier = Modifier.weight(1f), trailing = { Txt("SKIP", T.Eyebrow.copy(color = C.Mid), Modifier.pressable { model.setOnboarded(true); onClose() }.padding(8.dp)) })
+            Eyebrow(if (sms) "Arm it" else "Start", live = sms, modifier = Modifier.weight(1f), trailing = {
+                Box(Modifier.heightIn(min = 48.dp).pressable { model.setOnboarded(true); onClose() }.padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                    Txt("SKIP", T.Eyebrow.copy(color = C.Mid))
+                }
+            })
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Spacer(Modifier.padding(top = 6.dp))
-            Headline("Arm it once and it", "listens for you.")
-            Txt("Android asks for each permission separately, and asks extra when an app isn't from the Play Store. Do them in order; each dot turns green when it works.", T.Body, color = C.Mid)
+            Spacer(Modifier.padding(top = 2.dp))
+            // Works without SMS, so it comes first: the quickest way to see something real.
+            StatementStart(onAdd = host::pickStatements)
 
-            Step("01", "Read payment SMS", "Lets Credu1ar see bank alerts the moment they arrive. Nothing else is read: OTPs and chats are discarded unread.", a.sms, "Allow SMS") { host.requestSms() }
-            if (needsUnlock) Step(
-                "02", "Unlock restricted settings",
-                "If “Allow” is greyed out or says Restricted setting: open App info, tap ⋮ (top right), choose Allow restricted settings, then come back and retry step 1 and 3.",
-                a.sms && a.notifListener, "Open App info",
-            ) { host.openAppInfo() }
-            Step("03", "Notification access", "Catches Google Messages RCS chats and UPI-app alerts, which SMS can't see. Only banks, Messages and UPI apps are read.", a.notifListener, "Open settings") { host.openNotifAccess() }
-            Step("04", "Quiet alerts", "A small self-dismissing note when a payment is filed. Optional.", a.postNotif, "Allow alerts") { host.requestPostNotif() }
-            Step("05", "Keep it alive", "Some phones freeze background apps. Set Credu1ar to Unrestricted so alerts are never missed.", a.battery, "Open battery") { host.openBattery() }
+            if (sms) {
+                Spacer(Modifier.padding(top = 10.dp))
+                Txt("Or link SMS for live tracking", T.Title)
+                Txt("Android asks for each permission separately, and asks extra when an app isn't from the Play Store. Do them in order; each dot turns green when it works.", T.Small)
+
+                Step("01", "Read payment SMS", "Lets Credu1ar see bank alerts the moment they arrive. Nothing else is read: OTPs and chats are discarded unread.", a.sms, "Allow SMS") { host.requestSms() }
+                if (needsUnlock) Step(
+                    "02", "Unlock restricted settings",
+                    "If “Allow” is greyed out or says Restricted setting: open App info, tap ⋮ (top right), choose Allow restricted settings, then come back and retry step 1 and 3.",
+                    a.sms && a.notifListener, "Open App info",
+                ) { host.openAppInfo() }
+                Step("03", "Notification access", "Catches Google Messages RCS chats and UPI-app alerts, which SMS can't see. Only banks, Messages and UPI apps are read.", a.notifListener, "Open settings") { host.openNotifAccess() }
+                Step("04", "Quiet alerts", "A small self-dismissing note when a payment is filed. Optional.", a.postNotif, "Allow alerts") { host.requestPostNotif() }
+                Step("05", "Keep it alive", "Some phones freeze background apps. Set Credu1ar to Unrestricted so alerts are never missed.", a.battery, "Open battery") { host.openBattery() }
+            } else {
+                Txt("This edition reads bank statements only. It has no SMS or notification access, so Android never asks for them.", T.Small, Modifier.padding(top = 4.dp))
+            }
             Spacer(Modifier.padding(top = 4.dp))
         }
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (!sms) {
+                PillButton("Try with sample data", modifier = Modifier.fillMaxWidth()) { model.loadSample(); model.setOnboarded(true); onClose() }
+                return@Column
+            }
             if (a.sms) {
                 // Linking SMS reads this month (and all of last month in the first week) by itself; this shows it happening.
                 val reading = s.history is AppModel.History.Reading
@@ -64,7 +83,9 @@ fun ArmScreen(s: AppModel.UiState, model: AppModel, host: Host, onClose: () -> U
             } else {
                 PillButton("Try with sample data first", modifier = Modifier.fillMaxWidth()) { model.loadSample(); model.setOnboarded(true); onClose() }
             }
-            PillButton(if (a.sms || a.notifListener) "Done" else "Continue without arming", primary = true, modifier = Modifier.fillMaxWidth()) { model.setOnboarded(true); onClose() }
+            // One gradient per glance: the statement button above is the primary action until something is armed.
+            val armed = a.sms || a.notifListener
+            PillButton(if (armed) "Done" else "Continue without arming", primary = armed, modifier = Modifier.fillMaxWidth()) { model.setOnboarded(true); onClose() }
         }
     }
 }

@@ -34,6 +34,8 @@ interface Host {
     fun openBattery()
     fun exportCsv()
     fun copy(label: String, text: String)
+    /** Android's own file picker, PDFs only. No storage permission; nothing about the file is kept. */
+    fun pickStatements()
 }
 
 @Composable
@@ -56,13 +58,28 @@ fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
     var confirmWipe by remember { mutableStateOf(false) }
     val d = s.diag
     val a = s.access
+    // The statement edition has no SMS or notification access, so it shows none of their rows (ADR-016).
+    val sms = BuildConfig.SMS_CAPTURE
+    val order = buildList {
+        if (sms) add("capture")
+        add("statements")
+        if (sms) add("traffic")
+        add("data")
+        if (s.unparsed.isNotEmpty()) add("unread")
+        add("privacy"); add("about"); add("danger")
+    }
+    fun no(key: String) = (order.indexOf(key) + 1).toString().padStart(2, '0')
 
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 120.dp)) {
         item { Eyebrow("System", "04", live = a.sms || a.notifListener) }
-        item { Spacer(Modifier.height(14.dp)); Headline("Is it listening?", if (a.sms || a.notifListener) "Yes. Here's the proof." else "Not yet. Arm it below.") }
-
         item {
-            Section("Capture", "01") {
+            Spacer(Modifier.height(14.dp))
+            if (sms) Headline("Is it listening?", if (a.sms || a.notifListener) "Yes. Here's the proof." else "Not yet. Arm it below.")
+            else Headline("Statement mode.", "It reads what you add.")
+        }
+
+        if (sms) item {
+            Section("Capture", no("capture")) {
                 Panel {
                     Column {
                         StatusRow("Payment SMS", a.sms, if (a.sms) "Last SMS heard ${Fmt.ago(d.lastSmsAt, s.now)}" else "Needed to read bank alerts", "Allow") { host.requestSms() }
@@ -87,7 +104,13 @@ fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
         }
 
         item {
-            Section("Traffic", "02") {
+            Section("Bank statements", no("statements")) {
+                StatementsPanel(s.statements, onAdd = host::pickStatements, onRemove = model::removeStatement)
+            }
+        }
+
+        if (sms) item {
+            Section("Traffic", no("traffic")) {
                 Panel {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(Modifier.fillMaxWidth()) {
@@ -107,20 +130,22 @@ fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
         }
 
         item {
-            Section("Data", "03") {
+            Section("Data", no("data")) {
                 Panel {
                     Column {
                         val h = s.history
-                        SettingRow("SMS history", when {
-                            h is AppModel.History.Reading -> "Reading… ${h.read} of ${h.total} messages"
-                            h is AppModel.History.Done -> "Read from ${Fmt.shortDate(h.fromMillis)} · ${h.payments} payments"
-                            s.historyFromMillis > 0 -> "Read from ${Fmt.shortDate(s.historyFromMillis)}. Each tap reads one more month"
-                            else -> "Old bank alerts already on this phone, a month at a time"
-                        }) {
-                            PillButton("Add ${s.earlierMonth.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)}", enabled = a.sms && h !is AppModel.History.Reading) { model.addEarlierMonth() }
+                        if (sms) {
+                            SettingRow("SMS history", when {
+                                h is AppModel.History.Reading -> "Reading… ${h.read} of ${h.total} messages"
+                                h is AppModel.History.Done -> "Read from ${Fmt.shortDate(h.fromMillis)} · ${h.payments} payments"
+                                s.historyFromMillis > 0 -> "Read from ${Fmt.shortDate(s.historyFromMillis)}. Each tap reads one more month"
+                                else -> "Old bank alerts already on this phone, a month at a time"
+                            }) {
+                                PillButton("Add ${s.earlierMonth.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH)}", enabled = a.sms && h !is AppModel.History.Reading) { model.addEarlierMonth() }
+                            }
+                            Hairline()
                         }
-                        Hairline()
-                        SettingRow("Sample data", if (s.counts.sample > 0) "${s.counts.sample} fictional payments loaded" else "Fictional bank messages, to look around") {
+                        SettingRow("Sample data", if (s.counts.sample > 0) "${s.counts.sample} fictional payments loaded" else if (sms) "Fictional bank messages, to look around" else "Fictional payments, to look around") {
                             PillButton(if (s.counts.sample > 0) "Remove" else "Load") { if (s.counts.sample > 0) model.clearSample() else model.loadSample() }
                         }
                         Hairline()
@@ -133,7 +158,7 @@ fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
         }
 
         if (s.unparsed.isNotEmpty()) item {
-            Section("Couldn't read · ${s.unparsed.size}", "04") {
+            Section("Couldn't read · ${s.unparsed.size}", no("unread")) {
                 Panel {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Txt("These looked like payments but no rule matched. Copy the masked report and share it to get a new bank format added.", T.Small)
@@ -148,17 +173,19 @@ fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
         }
 
         item {
-            Section("Privacy", "05") {
+            Section("Privacy", no("privacy")) {
                 Panel {
                     Column {
                         SettingRow("Hide amounts", "Shows ••••• until you turn this off") { Toggle(s.prefs.privacy) { model.setPrivacy(it) } }
                         Hairline()
                         SettingRow("Hide from recents & screenshots", "Blocks screen capture of this app") { Toggle(s.prefs.secure) { model.setSecure(it) } }
                         Hairline()
-                        SettingRow("Captured-payment alerts", "A quiet note that disappears after 10 seconds") { Toggle(s.prefs.notify) { model.setNotify(it) } }
-                        Hairline()
-                        SettingRow("Keep original message", "Lets you see exactly what was read. Off = only the parsed fields are stored") { Toggle(s.prefs.keepRaw) { model.setKeepRaw(it) } }
-                        Hairline()
+                        if (sms) {
+                            SettingRow("Captured-payment alerts", "A quiet note that disappears after 10 seconds") { Toggle(s.prefs.notify) { model.setNotify(it) } }
+                            Hairline()
+                            SettingRow("Keep original message", "Lets you see exactly what was read. Off = only the parsed fields are stored") { Toggle(s.prefs.keepRaw) { model.setKeepRaw(it) } }
+                            Hairline()
+                        }
                         Txt("Nothing leaves this phone. No account, no analytics, no cloud backup. The only network use is the update check you start below.", T.Small, Modifier.padding(top = 10.dp))
                     }
                 }
@@ -166,7 +193,7 @@ fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
         }
 
         item {
-            Section("About", "06") {
+            Section("About", no("about")) {
                 Panel {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(Modifier.fillMaxWidth()) {
@@ -184,9 +211,13 @@ fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
         }
 
         item {
-            Section("Danger zone", "07") {
+            Section("Danger zone", no("danger")) {
                 Panel {
-                    SettingRow("Delete everything", "Payments, rules and counters. Cannot be undone. New SMS are still filed; old ones come back only if you tap Add") {
+                    SettingRow(
+                        "Delete everything",
+                        if (sms) "Payments, statements, rules and counters. Cannot be undone. New SMS are still filed; old ones come back only if you tap Add"
+                        else "Payments, statements, rules and counters. Cannot be undone. Statements come back only if you add them again",
+                    ) {
                         PillButton(if (confirmWipe) "Tap again" else "Delete", primary = false) { if (confirmWipe) { model.deleteAll(); confirmWipe = false } else confirmWipe = true }
                     }
                 }

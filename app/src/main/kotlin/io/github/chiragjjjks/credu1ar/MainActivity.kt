@@ -40,6 +40,10 @@ class MainActivity : ComponentActivity(), Host {
                 .onFailure { runOnUiThread { Toast.makeText(this, "Export failed", Toast.LENGTH_SHORT).show() } }
         }
     }
+    // A one-time read grant only: no persistable permission is taken, and no file name or URI is stored.
+    private val statementPicker = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) model.importStatements(uris)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,8 +67,10 @@ class MainActivity : ComponentActivity(), Host {
         super.onResume()
         // Coming back from a system settings screen: re-read what Android now allows, and catch up on anything missed.
         model.refresh()
-        model.catchUpNow()
-        model.rebindListener()
+        if (BuildConfig.SMS_CAPTURE) {
+            model.catchUpNow()
+            model.rebindListener()
+        }
     }
 
     // ---------------------------------------------------------------------------------------------- Host
@@ -95,5 +101,10 @@ class MainActivity : ComponentActivity(), Host {
     override fun copy(label: String, text: String) {
         getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(label, text))
         Toast.makeText(this, "Copied", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun pickStatements() {
+        runCatching { statementPicker.launch(arrayOf("application/pdf")) }
+            .onFailure { Toast.makeText(this, "This phone has no file picker", Toast.LENGTH_SHORT).show() }
     }
 }

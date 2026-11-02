@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.chiragjjjks.credu1ar.core.insights.Insights
 import io.github.chiragjjjks.credu1ar.core.model.Group
 import io.github.chiragjjjks.credu1ar.core.model.Money
@@ -73,9 +75,15 @@ fun GroupRing(groups: List<Insights.GroupTotal>, totalLabel: String, caption: St
     }
 }
 
-/** One ranked row: dot, label, value, and a thin bar that fills on entry. [fraction] is 0..1 of the largest row. */
+/**
+ * One ranked row: dot, label, value, and a thin bar that fills on entry. [fraction] is 0..1 of the largest row.
+ * [caption] / [captionEnd] sit under the bar in mono ("26% OF SPEND", "31 PAYMENTS"), never in the series colour.
+ */
 @Composable
-fun RankedBar(label: String, value: String, fraction: Float, color: Color, sub: String? = null, onClick: (() -> Unit)? = null) {
+fun RankedBar(
+    label: String, value: String, fraction: Float, color: Color, sub: String? = null,
+    caption: String? = null, captionEnd: String? = null, onClick: (() -> Unit)? = null,
+) {
     val f by animateFloatAsState(fraction.coerceIn(0f, 1f), tween(700, easing = Ease.Out), label = "bar")
     Column(Modifier.fillMaxWidth().let { if (onClick != null) it.pressable(onClick = onClick) else it }.padding(vertical = 7.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -83,12 +91,45 @@ fun RankedBar(label: String, value: String, fraction: Float, color: Color, sub: 
             Spacer(Modifier.width(10.dp))
             Txt(label, T.Body, Modifier.weight(1f), maxLines = 1)
             if (sub != null) { Txt(sub, T.MonoSmall); Spacer(Modifier.width(12.dp)) }
-            Txt(value, T.Amount)
+            Txt(value, T.Amount, maxLines = 1)
         }
         Spacer(Modifier.height(7.dp))
         Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(C.Line)) {
             Box(Modifier.fillMaxWidth(f).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(color))
         }
+        BarCaption(caption, captionEnd)
+    }
+}
+
+/**
+ * The report's "Not sorted yet" bar: an amber outline instead of a category colour, so money the app couldn't place
+ * never borrows a category's identity (or inflates People & Cash).
+ */
+@Composable
+fun UnsortedBar(label: String, value: String, fraction: Float, caption: String? = null, captionEnd: String? = null, onClick: (() -> Unit)? = null) {
+    val f by animateFloatAsState(fraction.coerceIn(0f, 1f), tween(700, easing = Ease.Out), label = "bar")
+    val shape = RoundedCornerShape(3.dp)
+    Column(Modifier.fillMaxWidth().let { if (onClick != null) it.pressable(onClick = onClick) else it }.padding(vertical = 7.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(8.dp).border(1.5.dp, C.Attention, CircleShape))
+            Spacer(Modifier.width(10.dp))
+            Txt(label, T.Body, Modifier.weight(1f), maxLines = 1)
+            Txt(value, T.Amount, maxLines = 1)
+        }
+        Spacer(Modifier.height(6.dp))
+        Box(Modifier.fillMaxWidth().height(6.dp).clip(shape).background(C.Line)) {
+            Box(Modifier.fillMaxWidth(f).fillMaxHeight().clip(shape).background(C.Attention.copy(alpha = 0.14f)).border(1.dp, C.Attention, shape))
+        }
+        BarCaption(caption, captionEnd)
+    }
+}
+
+@Composable
+private fun BarCaption(start: String?, end: String?) {
+    if (start == null && end == null) return
+    Row(Modifier.fillMaxWidth().padding(top = 6.dp)) {
+        Txt(start.orEmpty(), T.Eyebrow.copy(fontSize = 10.sp), Modifier.weight(1f), maxLines = 1)
+        if (end != null) Txt(end, T.Eyebrow.copy(fontSize = 10.sp), maxLines = 1)
     }
 }
 
