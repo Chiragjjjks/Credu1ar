@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import io.github.chiragjjjks.credu1ar.BuildConfig
 import io.github.chiragjjjks.credu1ar.core.insights.Insights
 import io.github.chiragjjjks.credu1ar.data.StatementRecord
 import io.github.chiragjjjks.credu1ar.ingest.FileResult
@@ -270,7 +271,10 @@ fun StatementsPanel(statements: List<StatementRecord>, onAdd: () -> Unit, onRemo
                 }
                 Hairline()
             }
-            if (statements.isNotEmpty()) Txt("Remove takes out that statement's payments, except ones another statement or an SMS also has.", T.Small, Modifier.padding(top = 10.dp, bottom = 12.dp))
+            if (statements.isNotEmpty()) Txt(
+                "Remove takes out that statement's payments, except ones another statement${if (BuildConfig.SMS_CAPTURE) " or an SMS" else ""} also has.",
+                T.Small, Modifier.padding(top = 10.dp, bottom = 12.dp),
+            )
             PillButton(if (statements.isEmpty()) "Add bank statement" else "Add another statement", primary = statements.isEmpty(), modifier = Modifier.fillMaxWidth(), onClick = onAdd)
             Txt(STATEMENT_FINE_LINE, T.Eyebrow.copy(lineHeight = T.Eyebrow.fontSize * 1.6f), Modifier.padding(top = 10.dp))
         }

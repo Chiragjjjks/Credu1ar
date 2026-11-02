@@ -75,7 +75,7 @@ fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
         item {
             Spacer(Modifier.height(14.dp))
             if (sms) Headline("Is it listening?", if (a.sms || a.notifListener) "Yes. Here's the proof." else "Not yet. Arm it below.")
-            else Headline("Statement mode.", "Nothing listens; you add statements.")
+            else Headline("Statement mode.", "It reads what you add.")
         }
 
         if (sms) item {
@@ -145,7 +145,7 @@ fun SystemScreen(s: AppModel.UiState, model: AppModel, host: Host, nav: Nav) {
                             }
                             Hairline()
                         }
-                        SettingRow("Sample data", if (s.counts.sample > 0) "${s.counts.sample} fictional payments loaded" else "Fictional bank messages, to look around") {
+                        SettingRow("Sample data", if (s.counts.sample > 0) "${s.counts.sample} fictional payments loaded" else if (sms) "Fictional bank messages, to look around" else "Fictional payments, to look around") {
                             PillButton(if (s.counts.sample > 0) "Remove" else "Load") { if (s.counts.sample > 0) model.clearSample() else model.loadSample() }
                         }
                         Hairline()
