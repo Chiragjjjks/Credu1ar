@@ -21,7 +21,8 @@ import kotlin.concurrent.thread
  *
  * Extras: sender+body -> a real SMS_RECEIVED intent with genuine PDUs goes through the production [SmsReceiver];
  *         notif=true  -> same text as a notification signal;  sample=true -> load sample data;  sample=clear -> remove it;
- *         catchup=true -> run the inbox read (the first-link window if history was never read);  wipe=true -> delete everything.
+ *         catchup=true -> run the inbox read (the first-link window if history was never read);  wipe=true -> delete everything;
+ *         pdftext=<file name in the app's files dir> -> dump what Android's PdfRenderer text API returns to files/<name>.txt.
  */
 class DebugInjectReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -35,6 +36,7 @@ class DebugInjectReceiver : BroadcastReceiver() {
                     "clear" -> Graph.repo(app).clearSamples()
                 }
                 if (intent.getBooleanExtra("catchup", false)) CatchUp.scan(app)
+                intent.getStringExtra("pdftext")?.let { dumpPdfText(app, it) }
                 val sender = intent.getStringExtra("sender")
                 val body = intent.getStringExtra("body")
                 if (sender != null && body != null) {
@@ -57,5 +59,26 @@ class DebugInjectReceiver : BroadcastReceiver() {
                 pending?.finish()
             }
         }
+    }
+
+    /** What the platform text API gives us, page by page, with each content block's line boxes. API 35+. */
+    private fun dumpPdfText(app: Context, name: String) {
+        if (android.os.Build.VERSION.SDK_INT < 35) return
+        val file = java.io.File(app.filesDir, name)
+        val out = StringBuilder()
+        android.os.ParcelFileDescriptor.open(file, android.os.ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+            android.graphics.pdf.PdfRenderer(fd).use { r ->
+                for (i in 0 until r.pageCount) r.openPage(i).use { page ->
+                    val contents = page.textContents
+                    out.append("=== page ${i + 1} contents=${contents.size}\n")
+                    contents.forEachIndexed { j, c ->
+                        out.append("--- block $j boxes=${c.bounds.size} first=${c.bounds.firstOrNull()}\n")
+                        out.append(c.text).append('\n')
+                    }
+                }
+            }
+        }
+        java.io.File(app.filesDir, "$name.txt").writeText(out.toString())
+        android.util.Log.d("Credu1arDebug", "pdftext wrote ${out.length} chars")
     }
 }

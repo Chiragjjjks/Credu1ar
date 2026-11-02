@@ -1,0 +1,56 @@
+Account Statement
+16 Oct 2026 - 16 Nov 2026
+Asha K
+CRN xxxxxx123
+12 1st Cross Example Layout
+.
+Bangalore North
+Bengaluru - 560001
+Karnataka - India
+MICR 560000000 IFSC Code KKBK0000001
+Account No. 1234567890
+Account Type Savings
+Branch Bangalore - Example Branch
+Account Status Active
+Nominee Registered No
+Currency INDIAN RUPEE
+Savings Account Transactions
+# Date Description Chq/Ref. No. Withdrawal (Dr.) Deposit (Cr.) Balance
+- - Opening Balance - - - 42,777.78
+1 16 Oct 2026 UPI/Google
+Play/utib/610000000029/MandateExecu
+UPI-700000000128 210.00 42,567.78
+2 16 Oct 2026 UPI/PRIYA M/KKBK/610000000030/UPI UPI-700000000129 350.00 42,217.78
+3 17 Oct 2026 UPI/BMTC/YESB/610000000031/Payment for UPI-700000000130 12.00 42,205.78
+4 20 Oct 2026 UPI/Swiggy Limited/UTIB/610000000032/UPI UPI-700000000131 412.00 41,793.78
+5 31 Oct 2026 NEFT IN N260000000000003 ACME SOFTWARE PRIVATE
+LIMITED IC
+NEFTINW-1000000003 45,000.00 86,793.78
+6 01 Nov 2026 UPI/MEENA RAO/KVBL/610000000033/UPI UPI-700000000132 15,000.00 71,793.78
+7 05 Nov 2026 UPI/ZEPTO
+MARKETPLACE/YESB/610000000034/UPI
+UPI-700000000133 735.00 71,058.78
+8 14 Nov 2026 UPI/Chai Point/YESB/610000000035/UPI UPI-700000000134 40.00 71,018.78
+Statement Generated on 17 Nov 2026, 09:12 Page 1 of 
+2
+
+End of Statement
+Any discrepancy in the statement should be brought to the notice of Kotak Mahindra Bank Ltd. within
+one month from the date of receipt of the statement.
+This is a system generated report and does not require signature and stamp.
+Account Summary
+ Particulars Opening Balance Closing Balance
+ Savings Account (SA): 42,777.78 71,018.78
+For assistance, reach out to us at:
+Contact Us
+1800 0000
+(Toll-free number)
+Commonly Used Narrations
+AP - Autopay for Billpay Netcard - Netc@rd transaction
+ATW - ATM withdrawal done from Kotak ATM machine OT - Online Trading transaction via Payment Gateway
+NEFT - National Electronic Funds Transfer Sweep transfer from - Broken existing Term Deposit
+ASHA K
+Account No. 1234567890
+Account Statement 16 Oct 2026 - 16 Nov 2026
+Statement Generated on 17 Nov 2026, 09:12 Page 2 of 
+2
