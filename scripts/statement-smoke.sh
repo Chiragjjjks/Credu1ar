@@ -29,6 +29,9 @@ python3 -I scripts/make-test-pdf.py "$FIX/kotak-asha-2026-10-16_2026-11-16.txt" 
 printf 'Dear guest,\nyour table for two is confirmed for 8 pm.\n' > "$OUT/pdf/note.txt"
 python3 -I scripts/make-test-pdf.py "$OUT/pdf/note.txt" "$OUT/pdf/note.pdf" >/dev/null
 cp "$FIX/kotak-asha-2026-10-16_2026-11-16.txt" "$OUT/pdf/text-only.pdf" # a .pdf name, but no PDF inside
+# Row 3 printed as 1,300.00 while its balance moved by 1,200.00.
+sed 's/UPI-700000000102 1,200.00 45,040.40/UPI-700000000102 1,300.00 45,040.40/' "$FIX/kotak-asha-2026-09-16_2026-10-16.txt" > "$OUT/pdf/bad.txt"
+python3 -I scripts/make-test-pdf.py "$OUT/pdf/bad.txt" "$OUT/pdf/bad.pdf" >/dev/null
 
 $ADB install -r "$APK" >/dev/null
 FULL=0
@@ -37,7 +40,7 @@ if [ $FULL = 1 ]; then for p in RECEIVE_SMS READ_SMS; do $ADB shell pm grant $PK
 $ADB logcat -c
 $ADB shell am start -n $PKG/.MainActivity >/dev/null; sleep 6
 $ADB shell pidof $PKG >/dev/null || fail "app is not running after launch"
-for f in sep sep-locked oct note text-only; do
+for f in sep sep-locked oct note text-only bad; do
   $ADB push "$OUT/pdf/$f.pdf" /data/local/tmp/credu1ar-$f.pdf >/dev/null 2>&1
   $ADB shell "run-as $PKG cp /data/local/tmp/credu1ar-$f.pdf files/$f.pdf"
   $ADB shell rm -f /data/local/tmp/credu1ar-$f.pdf
@@ -121,6 +124,15 @@ if [ $FULL = 1 ]; then
   expect "the SMS row stays, detached" "$(q "select count(*)||'/'||source||'/'||ifnull(stmt_key,'none')||'/'||ifnull(statement_id,'none') from txn where amount_paise = 1500000 and occurred_at >= $FROM")" "1/sms/none/none"
 fi
 expect "statements left" "$(q "select count(*) from statement")" 0
+
+# A statement where one row's amount doesn't match its balance change: that row is left out (and listed), the rest
+# import, and "Couldn't read" gets one entry for the import (counts only), not one per row, and not again for the same file.
+./scripts/inject.sh wipe >/dev/null
+has "a row that doesn't add up" "$(./scripts/inject.sh stmt bad.pdf)" rows=34 added=34 complete=false left_out=1
+has "the same file again" "$(./scripts/inject.sh stmt bad.pdf)" added=0 same_file=true
+expect "Couldn't-read entries / text in them" "$(q "select count(*)||'/'||sum(body like '%UPI%' or body like '%1,300%') from unparsed")" "1/0"
+expect "the statement is marked incomplete" "$(q "select complete from statement")" 0
+./scripts/inject.sh wipe >/dev/null
 
 $ADB shell am force-stop $PKG; $ADB shell am start -n $PKG/.MainActivity >/dev/null; sleep 5
 $ADB shell pidof $PKG >/dev/null || fail "app died on relaunch"
