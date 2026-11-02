@@ -16,6 +16,27 @@ object OwnName {
     private fun words(name: String?): List<String> =
         name.orEmpty().lowercase().split(Regex("[^a-z]+")).filter { it.isNotBlank() && it !in honorifics }
 
+    /** The same words as the holder's printed name, in any order ("K ASHA" for "Asha K"): it IS the printed name. */
+    fun exact(payee: String?, holder: String?): Boolean {
+        val p = words(payee)
+        return p.size >= 2 && p.sorted() == words(holder).sorted()
+    }
+
+    /**
+     * Every place the holder's printed name appears in [text] (either word order, any case, whole words) replaced by
+     * [with]. Used on narrations before anything is stored, so the name can't be kept by accident in any row type.
+     */
+    fun scrub(text: String, holder: String?, with: String = "Own account"): String {
+        val h = words(holder)
+        if (h.size < 2) return text
+        var out = text
+        for (order in listOf(h, h.reversed()).distinct()) {
+            val pattern = order.joinToString("""[\s.]+""", prefix = """(?i)(?<![A-Za-z])""", postfix = """(?![A-Za-z])""") { Regex.escape(it) }
+            out = out.replace(Regex(pattern), with)
+        }
+        return out
+    }
+
     fun matches(payee: String?, holder: String?): Boolean {
         val p = words(payee)
         val h = words(holder)

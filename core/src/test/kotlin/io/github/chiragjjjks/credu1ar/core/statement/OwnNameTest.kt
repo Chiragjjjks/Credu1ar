@@ -43,15 +43,33 @@ class OwnNameTest {
             assertEquals(Category.SELF_TRANSFER, a.categorization.category)
             assertTrue(a.categorization.confidence < REVIEW_THRESHOLD)
             assertTrue(a.needsReview)
-            assertEquals("Own account", a.merchant.name)
-            assertEquals("own_account", a.merchant.key)
+        }
+        // The holder's printed name, in either order: "Own account", and the name is gone from the row.
+        for (i in items.take(2)) {
+            assertEquals("Own account", i.accepted.merchant.name)
+            assertEquals("own_account", i.accepted.merchant.key)
             assertTrue("Own account" in i.row.narration)
         }
+        // Only similar (could be someone else): keeps its own name and key, so a rule taught on it stays with that payee.
+        assertEquals("Asha Kumari", items[2].accepted.merchant.name)
+        assertTrue(items[2].accepted.merchant.key != "own_account")
         assertEquals(Category.SENT_TO_PEOPLE, items[3].accepted.categorization.category)
+        val printed = Regex("""(?i)\basha\s+k\b|\bk\s+asha\b""")
         for (i in items) {
-            assertFalse(i.accepted.toString().contains("asha", ignoreCase = true), "holder name leaked into ${i.row.index}")
-            assertFalse(i.row.narration.contains("asha", ignoreCase = true), "holder name left in the narration of ${i.row.index}")
+            assertFalse(printed.containsMatchIn(i.accepted.toString()), "holder name leaked into ${i.row.index}")
+            assertFalse(printed.containsMatchIn(i.row.narration), "holder name left in the narration of ${i.row.index}")
         }
+    }
+
+    @Test fun theHoldersNameIsScrubbedFromEveryKindOfRow() {
+        assertEquals("IMPS-612345678901-Own account-HDFC-XX5678-self", OwnName.scrub("IMPS-612345678901-ASHA K-HDFC-XX5678-self", "Asha K"))
+        assertEquals("NEFT DR Own account HDFC", OwnName.scrub("NEFT DR K. ASHA HDFC", "Asha K"))
+        assertEquals("UPI/ASHA KAPOOR/HDFC/1/UPI", OwnName.scrub("UPI/ASHA KAPOOR/HDFC/1/UPI", "Asha K"), "a longer name is someone else's")
+    }
+
+    @Test fun aRuleOnPaymentsWithoutAPayeeIsIgnored() {
+        val c = io.github.chiragjjjks.credu1ar.core.category.Categorizer(mapOf("unknown" to Category.ATM_CASH))
+        assertEquals(null, c.rule("unknown", io.github.chiragjjjks.credu1ar.core.model.Direction.DEBIT))
     }
 
     @Test fun noPaymentFromTheFixturesCarriesTheHoldersName() {

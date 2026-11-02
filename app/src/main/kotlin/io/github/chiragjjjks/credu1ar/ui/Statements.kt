@@ -98,7 +98,7 @@ object StatementCopy {
                 ResultCopy("0 NEW · ${f.alreadyHere} ALREADY HERE", true, "You've added this statement before. Nothing changed.")
             f.leftOut > 0 -> ResultCopy(
                 "${f.leftOut} ${if (f.leftOut == 1) "ROW DIDN'T" else "ROWS DIDN'T"} ADD UP", false,
-                "$what What was read is saved. The ${if (f.leftOut == 1) "row that didn't" else "rows that didn't"} add up ${if (f.leftOut == 1) "was" else "were"} left out and listed under System → Couldn't read.",
+                "$what What was read is saved. The ${if (f.leftOut == 1) "row that didn't" else "rows that didn't"} add up ${if (f.leftOut == 1) "was" else "were"} left out. Download the statement again from net banking to fill ${if (f.leftOut == 1) "it" else "them"} in.",
             )
             f.alreadyHere > 0 -> ResultCopy("${f.added} NEW · ${f.alreadyHere} ALREADY HERE", true, "$what $look")
             f.complete -> ResultCopy("${f.rows} ${if (f.rows == 1) "ROW" else "ROWS"} · ADDS UP TO THE CLOSING BALANCE ✓", true, "$what $look")

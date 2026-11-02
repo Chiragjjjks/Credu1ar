@@ -36,10 +36,10 @@ object StatementTxns {
         }
     }
 
-    /** The row with a payee in the holder's own name replaced by "Own account", so the name can't be stored by accident. */
+    /** The row with the holder's printed name replaced by "Own account" wherever it appears, in every row type (UPI, IMPS, NEFT…). */
     private fun withoutHolder(h: StatementHeader, row: StatementRow): StatementRow {
-        val payee = narration(h, row).payee ?: return row
-        return if (OwnName.matches(payee, h.holderName)) row.copy(narration = row.narration.replace(payee, "Own account")) else row
+        val clean = OwnName.scrub(row.narration, h.holderName)
+        return if (clean == row.narration) row else row.copy(narration = clean)
     }
 
     /** A stored-looking [Txn] for an item, for reports and tests before the database assigns an id. */
@@ -71,7 +71,11 @@ object StatementTxns {
      */
     fun parsed(h: StatementHeader, row: StatementRow, occurredAtMillis: Long): ParsedTxn {
         val n = narration(h, row)
-        val own = OwnName.matches(n.payee, h.holderName)
+        // Exactly the holder's printed name: an own-account transfer named "Own account" (the name is never kept).
+        // Only similar ("ASHA KAPOOR" for "Asha K"): maybe their own account, maybe someone else, so the payee keeps its
+        // own name and key and the owner confirms; a rule taught on it then can't refile real own-account transfers.
+        val own = OwnName.exact(n.payee, h.holderName)
+        val similar = !own && OwnName.matches(n.payee, h.holderName)
         return ParsedTxn(
             direction = row.direction,
             amountPaise = row.amountPaise,
@@ -84,7 +88,11 @@ object StatementTxns {
             reference = n.rrn ?: row.ref,
             occurredAtMillis = occurredAtMillis,
             balancePaise = row.balancePaise,
-            hints = if (own) n.hints + setOf("self", "own_name") else n.hints,
+            hints = when {
+                own -> n.hints + setOf("self", "own_name")
+                similar -> n.hints + setOf("self", "own_name_guess")
+                else -> n.hints
+            },
             confidence = 0.9f,
             payeeTruncated = !own && n.payeeTruncated,
         )

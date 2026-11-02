@@ -42,7 +42,7 @@ $ADB shell am start -n $PKG/.MainActivity >/dev/null; sleep 6
 $ADB shell pidof $PKG >/dev/null || fail "app is not running after launch"
 for f in sep sep-locked oct note text-only bad; do
   $ADB push "$OUT/pdf/$f.pdf" /data/local/tmp/credu1ar-$f.pdf >/dev/null 2>&1
-  $ADB shell "run-as $PKG cp /data/local/tmp/credu1ar-$f.pdf files/$f.pdf"
+  $ADB shell "run-as $PKG mkdir -p files && run-as $PKG cp /data/local/tmp/credu1ar-$f.pdf files/$f.pdf"
   $ADB shell rm -f /data/local/tmp/credu1ar-$f.pdf
 done
 ./scripts/inject.sh wipe >/dev/null

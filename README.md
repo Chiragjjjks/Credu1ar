@@ -32,7 +32,7 @@ Because Credu1ar reads your payment SMS, Google Play Protect in India **blocks**
 export JAVA_HOME=/opt/homebrew/opt/openjdk@17
 export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 ./gradlew :core:test                                  # parser, categoriser, insights (JVM, seconds)
-./gradlew :app:testDebugUnitTest :app:assembleRelease # unit tests + signed APK
+./gradlew :app:testFullDebugUnitTest :app:assembleFullRelease :app:assembleStatementRelease # unit tests + both signed APKs
 ```
 
 Test the whole pipeline on the emulator with fake bank SMS:

@@ -63,7 +63,7 @@ jobs:
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
           export VERSION_CODE=$((10000 + BUILD_NUMBER))
-          ./gradlew --no-daemon :core:test :app:testFullDebugUnitTest :app:lintFullDebug \
+          ./gradlew --no-daemon :core:test :app:testFullDebugUnitTest :app:lintFullDebug :app:lintStatementDebug \
             :app:assembleFullRelease :app:assembleStatementRelease :app:assembleFullDebug :app:assembleStatementDebug
 
       - name: Collect and verify APKs

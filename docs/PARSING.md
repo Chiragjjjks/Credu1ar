@@ -39,7 +39,7 @@ scripts/inject.sh sms VM-HDFCBK-S "Rs.450.00 debited from a/c **1234 on 29-10-26
 scripts/inject.sh notif "Google Pay" "Paid ₹312 to Zepto"
 scripts/inject.sh sample         # a fictional 3-month ledger
 scripts/dump-db.sh               # what the app stored
-scripts/android-smoke.sh app/build/outputs/apk/debug/app-debug.apk
+scripts/android-smoke.sh app/build/outputs/apk/full/debug/app-full-debug.apk
 ```
 
 ## Independent red-team corpus

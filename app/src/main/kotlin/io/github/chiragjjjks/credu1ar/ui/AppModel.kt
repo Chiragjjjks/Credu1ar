@@ -141,6 +141,9 @@ class AppModel(private val app: Context) {
     @Volatile private var coldStart = true
     /** The files of the import in progress, kept only so a locked PDF can be retried with its password. */
     @Volatile private var picked: List<Uri> = emptyList()
+    @Volatile private var pickedTotal = 0
+    /** Results of files already imported in this pick, before a locked one stopped the run. */
+    @Volatile private var importedSoFar: List<FileResult> = emptyList()
     /** One inbox read at a time from the UI: the permission callback and onResume both ask, the second must not race. */
     private val reads = Mutex()
 
@@ -249,8 +252,12 @@ class AppModel(private val app: Context) {
         // Full app: the current month stays live (ring, pace, ticker) until a statement covers it. The statement edition
         // has nothing live, so its current month is a report like any other.
         if (BuildConfig.SMS_CAPTURE && month == current && covered == 0) return PulseView(st.id, null, emptyList(), oldest)
-        // A month no statement touches is read like SMS-only data (treated as complete), so it still compares.
+        // A month no statement touches is read like SMS-only data (treated as complete), so it still compares, unless the
+        // month before it is only partly covered by a statement: half a month is never a fair comparison.
+        val prev = month.minusMonths(1)
+        val prevPartial = Reports.coverage(ranges, prev.atDay(1), prev.atEndOfMonth()).partial
         val report = Reports.month(txns, month, if (covered > 0) ranges else null)
+            .let { if (covered == 0 && prevPartial) it.copy(previousPaise = null) else it }
         val behind = statements.filter { !it.to.isBefore(first) && !it.from.isAfter(last) }
         return PulseView(st.id, report, behind, oldest)
     }
@@ -331,13 +338,20 @@ class AppModel(private val app: Context) {
     fun importStatements(uris: List<Uri>) {
         if (uris.isEmpty()) return
         picked = uris
+        pickedTotal = uris.size
+        importedSoFar = emptyList()
         runImport(null)
     }
 
     /** Retry the picked files with the password the owner typed. The password is passed through, never kept. */
     fun unlockStatement(password: String) { if (picked.isNotEmpty()) runImport(password) }
 
-    fun cancelImport() { picked = emptyList(); setImport(Import.Idle) }
+    fun cancelImport() {
+        picked = emptyList()
+        // Files before a locked one were already imported: say so rather than vanish.
+        val done = importedSoFar.also { importedSoFar = emptyList() }
+        setImport(if (done.isEmpty()) Import.Idle else Import.Done(done))
+    }
     fun dismissImport() { setImport(Import.Idle) }
 
     private fun runImport(password: String?) {
@@ -348,11 +362,19 @@ class AppModel(private val app: Context) {
                 val out = runCatching { StatementImport.run(app, uris, password) { setImport(Import.Reading(it)) } }
                     .getOrElse { uris.map { FileResult(null, null, null, null, 0, 0, 0, 0, false, 0, ImportProblem.UNREADABLE) }.let(ImportOutcome::Done) }
                 when (out) {
-                    is ImportOutcome.NeedsPassword -> setImport(Import.Locked(out.fileIndex, uris.size, out.wrongPassword))
+                    // Files before the locked one are already in: keep their results and retry only from the locked file on,
+                    // so each file can have its own password and none is reported as "added before".
+                    is ImportOutcome.NeedsPassword -> {
+                        importedSoFar = importedSoFar + out.done
+                        picked = uris.drop(out.fileIndex)
+                        setImport(Import.Locked(pickedTotal - picked.size, pickedTotal, out.wrongPassword))
+                    }
                     is ImportOutcome.Done -> {
                         picked = emptyList()
-                        if (out.files.any { it.problem == null }) openBestPeriod = true
-                        setImport(Import.Done(out.files))
+                        val all = importedSoFar + out.files
+                        importedSoFar = emptyList()
+                        if (all.any { it.problem == null }) openBestPeriod = true
+                        setImport(Import.Done(all))
                     }
                 }
                 repo.bump()

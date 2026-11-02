@@ -91,7 +91,12 @@ object Statements {
     fun parse(rawPages: List<String>): StatementParse {
         val pages = rawPages.map(StatementText::normalize)
         if (pages.all { it.isBlank() }) return StatementParse.NoText
-        layouts.firstOrNull { it.recognises(pages) }?.let { return StatementParse.Parsed(it.read(pages)) }
+        layouts.firstOrNull { it.recognises(pages) }?.let { layout ->
+            val s = layout.read(pages)
+            // The bank's table header but not a single row: nothing to import, and no junk statement to list.
+            if (s.rows.isEmpty() && s.excluded.isEmpty()) return StatementParse.NotAStatement
+            return StatementParse.Parsed(s)
+        }
         val all = pages.joinToString("\n")
         if (statementWords.findAll(all).count() < 3) return StatementParse.NotAStatement
         return StatementParse.UnknownLayout(StatementText.guessBank(all))

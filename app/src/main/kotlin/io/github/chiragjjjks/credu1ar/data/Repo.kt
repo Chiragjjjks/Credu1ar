@@ -240,7 +240,8 @@ class Repo(private val db: Db) {
             val one = ContentValues().apply { put("category", category.id); put("confidence", 1.0); put("review", 0); put("user_set", 1) }
             w.update("txn", one, "id = ?", arrayOf(id.toString()))
             val k = key
-            if (remember && k != null) {
+            // Never a rule for "unknown": every payment without a payee shares that key (ADR-015 review).
+            if (remember && k != null && k != "unknown") {
                 val r = ContentValues().apply { put("merchant_key", k); put("category", category.id); put("created_at", System.currentTimeMillis()) }
                 w.insertWithOnConflict("rule", null, r, android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE)
                 val rest = ContentValues().apply { put("category", category.id); put("confidence", 1.0); put("review", 0) }

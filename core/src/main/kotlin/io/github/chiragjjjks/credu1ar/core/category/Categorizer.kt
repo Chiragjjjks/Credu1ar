@@ -31,6 +31,8 @@ class Categorizer(private val rules: Map<String, Category> = emptyMap()) {
 
     /** The owner's rule for [key], if there is one and it fits the direction (a debit never becomes salary). */
     fun rule(key: String, direction: Direction): Categorization? {
+        // Payments with no payee share the key "unknown": a rule on it would refile all of them at once.
+        if (key == "unknown") return null
         val c = rules[key] ?: return null
         val fits = if (direction == Direction.DEBIT) c.group.isSpend || c.group == Group.MOVES else c.group == Group.INCOME || c.group == Group.MOVES
         return if (fits) Categorization(c, 1.0f, "your rule") else null
@@ -46,7 +48,7 @@ class Categorizer(private val rules: Map<String, Category> = emptyMap()) {
         if ("card_bill" in t.hints || m.brand?.category == Category.CARD_BILL) return Categorization(Category.CARD_BILL, 0.9f, "credit-card payment")
         if (debit && t.instrument == Instrument.ATM) return Categorization(Category.ATM_CASH, 0.95f, "ATM withdrawal")
         // "own_name": a statement payee that matches the holder's name. Likely their own account, but the owner confirms.
-        if ("self" in t.hints) return if ("own_name" in t.hints) Categorization(Category.SELF_TRANSFER, GUESS_CONFIDENCE, "paid to your own name")
+        if ("self" in t.hints) return if ("own_name" in t.hints || "own_name_guess" in t.hints) Categorization(Category.SELF_TRANSFER, GUESS_CONFIDENCE, "paid to your own name")
             else Categorization(Category.SELF_TRANSFER, 0.8f, "own-account transfer")
         if (debit && "invest" in t.hints) return Categorization(Category.INVESTMENTS, 0.85f, "investment")
         if (debit && "charges" in t.hints) return Categorization(Category.BANK_CHARGES, 0.9f, "bank charges")
