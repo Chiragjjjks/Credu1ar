@@ -7,5 +7,10 @@
                 <action android:name="io.github.chiragjjjks.credu1ar.DEBUG_SMS" />
             </intent-filter>
         </receiver>
+        <!-- DEBUG BUILDS ONLY, not exported. Serves a test file through a pipe for the statement import test. -->
+        <provider
+            android:name=".debug.DebugPipeProvider"
+            android:authorities="${applicationId}.debugpipe"
+            android:exported="false" />
     </application>
 </manifest>

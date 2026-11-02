@@ -8,7 +8,9 @@ import io.github.chiragjjjks.credu1ar.core.model.RawSignal
 import io.github.chiragjjjks.credu1ar.core.model.Source
 import io.github.chiragjjjks.credu1ar.core.sample.SampleData
 import io.github.chiragjjjks.credu1ar.ingest.CatchUp
+import io.github.chiragjjjks.credu1ar.ingest.ImportOutcome
 import io.github.chiragjjjks.credu1ar.ingest.Ingest
+import io.github.chiragjjjks.credu1ar.ingest.StatementImport
 import io.github.chiragjjjks.credu1ar.ingest.SmsReceiver
 import kotlin.concurrent.thread
 
@@ -21,8 +23,14 @@ import kotlin.concurrent.thread
  *
  * Extras: sender+body -> a real SMS_RECEIVED intent with genuine PDUs goes through the production [SmsReceiver];
  *         notif=true  -> same text as a notification signal;  sample=true -> load sample data;  sample=clear -> remove it;
+ *         at=<epoch millis> (--el) -> the SMS/notification's own timestamp instead of now (date-independent tests);
  *         catchup=true -> run the inbox read (the first-link window if history was never read);  wipe=true -> delete everything;
- *         pdftext=<file name in the app's files dir> -> dump what Android's PdfRenderer text API returns to files/<name>.txt.
+ *         catchupfrom=<epoch millis> (--el) -> the "Add <month>" read, from that time to where history starts;
+ *         pdftext=<file name in the app's files dir> -> dump what Android's PdfRenderer text API returns to files/<name>.txt;
+ *         stmt=<file name in the app's files dir> [pw=<password>] [pipe=true] -> import it through StatementImport.run, exactly
+ *             as a picked file, and write the counts (never text, amounts or the name) to files/stmt-result.txt and logcat.
+ *             pipe=true serves the file through a pipe (DebugPipeProvider), which exercises the in-memory copy path;
+ *         stmtdelete=<statement id> (--el) -> Repo.deleteStatement.
  */
 class DebugInjectReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -36,15 +44,19 @@ class DebugInjectReceiver : BroadcastReceiver() {
                     "clear" -> Graph.repo(app).clearSamples()
                 }
                 if (intent.getBooleanExtra("catchup", false)) CatchUp.scan(app)
+                if (intent.hasExtra("catchupfrom")) CatchUp.scanFrom(app, intent.getLongExtra("catchupfrom", 0L))
                 intent.getStringExtra("pdftext")?.let { dumpPdfText(app, it) }
+                intent.getStringExtra("stmt")?.let { importStatement(app, it, intent.getStringExtra("pw"), intent.getBooleanExtra("pipe", false)) }
+                if (intent.hasExtra("stmtdelete")) Graph.repo(app).deleteStatement(intent.getLongExtra("stmtdelete", -1))
                 val sender = intent.getStringExtra("sender")
                 val body = intent.getStringExtra("body")
                 if (sender != null && body != null) {
+                    val at = intent.getLongExtra("at", 0L).takeIf { it > 0 } ?: System.currentTimeMillis()
                     if (intent.getBooleanExtra("notif", false)) {
-                        Ingest.handle(app, RawSignal(Source.NOTIFICATION, sender, body, System.currentTimeMillis(), intent.getStringExtra("pkg")))
+                        Ingest.handle(app, RawSignal(Source.NOTIFICATION, sender, body, at, intent.getStringExtra("pkg")))
                     } else {
                         val sms = Intent("android.provider.Telephony.SMS_RECEIVED")
-                            .putExtra("pdus", SmsPdu.deliverPdus(sender, body, System.currentTimeMillis()).toTypedArray())
+                            .putExtra("pdus", SmsPdu.deliverPdus(sender, body, at).toTypedArray())
                             .putExtra("format", "3gpp")
                         // Round-trip check: what does Android's own decoder make of our PDUs?
                         android.provider.Telephony.Sms.Intents.getMessagesFromIntent(sms)?.forEach {
@@ -59,6 +71,20 @@ class DebugInjectReceiver : BroadcastReceiver() {
                 pending?.finish()
             }
         }
+    }
+
+    /** Counts only: this line goes to logcat and to a file the smoke test reads. */
+    private fun importStatement(app: Context, name: String, password: String?, pipe: Boolean) {
+        val uri = if (pipe) DebugPipeProvider.uri(app, name) else android.net.Uri.fromFile(java.io.File(app.filesDir, name))
+        val line = when (val o = StatementImport.run(app, listOf(uri), password)) {
+            is ImportOutcome.NeedsPassword -> "outcome=needs_password wrong=${o.wrongPassword}"
+            is ImportOutcome.Done -> o.files.joinToString(" | ") { f ->
+                "outcome=done rows=${f.rows} added=${f.added} already=${f.alreadyHere} matched=${f.matchedExisting} complete=${f.complete} " +
+                    "left_out=${f.leftOut} same_file=${f.sameFile} problem=${f.problem}"
+            }
+        }
+        java.io.File(app.filesDir, "stmt-result.txt").writeText(line + "\n")
+        android.util.Log.d("Credu1arDebug", "stmt $line")
     }
 
     /** What the platform text API gives us, page by page, with each content block's line boxes. API 35+. */
