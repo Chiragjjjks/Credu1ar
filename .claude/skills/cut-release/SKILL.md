@@ -5,7 +5,7 @@ description: Prepare a Credu1ar release (version bump, release notes, checks) an
 
 # Cut a release
 
-The cycle (ADR-009): push to `main` → CI runs `:core:test`, `lintDebug`, builds the signed APK and smoke-tests it on an emulator → a `vX.Y.Z` tag publishes **that exact tested APK** with `SHA256SUMS.txt`. Never tag from a commit whose `main` run has not passed.
+The cycle (ADR-009): push to `main` → CI runs `:core:test`, `lintFullDebug`, builds the signed APKs of both editions and smoke-tests them on an emulator → a `vX.Y.Z` tag publishes **those exact tested APKs** with `SHA256SUMS.txt`. Never tag from a commit whose `main` run has not passed.
 
 ## Steps
 
@@ -18,10 +18,16 @@ The cycle (ADR-009): push to `main` → CI runs `:core:test`, `lintDebug`, build
    export JAVA_HOME=/opt/homebrew/opt/openjdk@17 ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
    set -a; . ~/.credu1ar/keystore.env; set +a
    scripts/check-version.sh
-   ./gradlew :core:test :app:lintDebug :app:assembleRelease :app:assembleDebug
-   scripts/android-smoke.sh app/build/outputs/apk/debug/app-debug.apk   # emulator running
-   $ANDROID_HOME/build-tools/36.0.0/apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
+   ./gradlew :core:test :app:testFullDebugUnitTest :app:lintFullDebug \
+     :app:assembleFullRelease :app:assembleStatementRelease :app:assembleFullDebug :app:assembleStatementDebug
+   scripts/check-editions.sh app/build/outputs/apk/full/release/app-full-release.apk app/build/outputs/apk/statement/release/app-statement-release.apk
+   # emulator running:
+   scripts/android-smoke.sh app/build/outputs/apk/full/debug/app-full-debug.apk
+   scripts/statement-smoke.sh app/build/outputs/apk/full/debug/app-full-debug.apk
+   scripts/statement-smoke.sh app/build/outputs/apk/statement/debug/app-statement-debug.apk
+   for e in full statement; do $ANDROID_HOME/build-tools/36.0.0/apksigner verify --print-certs app/build/outputs/apk/$e/release/app-$e-release.apk; done
    ```
+   Each release publishes two APKs (ADR-016): `Credu1ar-vX.Y.Z-android.apk` (full) and `Credu1ar-vX.Y.Z-statement.apk`, both in `SHA256SUMS.txt`.
 6. Commit (`chore(release): vX.Y.Z`), `git push origin main`, wait for the GitHub Actions run on that commit to go green (check the Actions tab; the smoke evidence is an artifact).
 7. **Tag only when it works.** The owner gave standing approval on 2026-10-31 ("After you think it will work just do a release"): tag once steps 5–6 are green and the change was checked on the emulator. Never tag a commit whose CI failed, was cancelled or is still running. If the owner withdraws that approval, go back to asking first.
    ```bash

@@ -15,7 +15,19 @@ class Db(context: Context) : SQLiteOpenHelper(context.applicationContext, "credu
         db.enableWriteAheadLogging() // the receiver and the UI may touch the file at the same time
     }
 
+    /** A fresh install builds the frozen v1 schema, then runs every migration, so new and upgraded phones end up identical. */
     override fun onCreate(db: SQLiteDatabase) {
+        createV1(db)
+        migrateTo2(db)
+    }
+
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        // Numbered, additive migrations. Never edit createV1 or a shipped migrateToN: phones already ran them.
+        if (oldVersion < 2) migrateTo2(db)
+    }
+
+    /** Schema v1 exactly as shipped in v0.1.0–v0.1.2. Frozen. */
+    private fun createV1(db: SQLiteDatabase) {
         db.execSQL(
             """CREATE TABLE txn (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -52,11 +64,42 @@ class Db(context: Context) : SQLiteOpenHelper(context.applicationContext, "credu
         db.execSQL("CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT)")
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // Version 1 is the first schema. Add numbered migrations here, never edit onCreate for shipped versions.
+    /**
+     * v2 (v0.1.3): bank statements (ADR-015). Additive only, so every v1 row survives untouched.
+     *  - `statement`: one row per imported statement. No holder name, file name or URI is ever stored.
+     *    `account_tail` is '' when the statement shows none, so the UNIQUE period key also holds then.
+     *  - `txn.stmt_key`: the row's identity across statement files (`StatementTxns.key`), also kept on SMS rows a statement matched.
+     *  - `txn.statement_id`: the import that brought or matched the row (for Remove).
+     *  - `txn.time_known`: 0 for date-only statement rows, stamped at noon IST.
+     * Runs inside the helper's upgrade transaction: it all applies or none of it does.
+     */
+    private fun migrateTo2(db: SQLiteDatabase) {
+        db.execSQL(
+            """CREATE TABLE statement (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                bank TEXT NOT NULL,
+                account_tail TEXT NOT NULL DEFAULT '',
+                period_from TEXT NOT NULL,
+                period_to TEXT NOT NULL,
+                opening_paise INTEGER,
+                closing_paise INTEGER,
+                row_count INTEGER NOT NULL,
+                added INTEGER NOT NULL DEFAULT 0,
+                matched INTEGER NOT NULL DEFAULT 0,
+                complete INTEGER NOT NULL,
+                content_hash TEXT NOT NULL UNIQUE,
+                imported_at INTEGER NOT NULL,
+                UNIQUE(bank, account_tail, period_from, period_to)
+            )""",
+        )
+        db.execSQL("ALTER TABLE txn ADD COLUMN stmt_key TEXT")
+        db.execSQL("ALTER TABLE txn ADD COLUMN statement_id INTEGER")
+        db.execSQL("ALTER TABLE txn ADD COLUMN time_known INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("CREATE UNIQUE INDEX txn_stmt_key ON txn(stmt_key) WHERE stmt_key IS NOT NULL")
+        db.execSQL("CREATE INDEX txn_statement ON txn(statement_id) WHERE statement_id IS NOT NULL")
     }
 
     companion object {
-        const val VERSION = 1
+        const val VERSION = 2
     }
 }

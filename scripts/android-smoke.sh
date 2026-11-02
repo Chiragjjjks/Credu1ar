@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# End-to-end smoke test on a running emulator/device, using the DEBUG apk (it carries the SMS injector).
+# End-to-end smoke test on a running emulator/device, using the FULL edition's DEBUG apk (it carries the SMS injector).
 # Proves: the app launches, a real multi-part SMS PDU is captured through the production SmsReceiver, a notification
 # for the same payment de-duplicates against it, an OTP is dropped unread, and nothing crashes.
-#   scripts/android-smoke.sh app/build/outputs/apk/debug/app-debug.apk
+# Bank statements are tested by scripts/statement-smoke.sh (either edition).
+#   scripts/android-smoke.sh app/build/outputs/apk/full/debug/app-full-debug.apk
 set -euo pipefail
 cd "$(dirname "$0")/.."
 APK=${1:?usage: android-smoke.sh <debug.apk>}

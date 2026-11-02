@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
+import io.github.chiragjjjks.credu1ar.BuildConfig
 import io.github.chiragjjjks.credu1ar.core.model.RawSignal
 import io.github.chiragjjjks.credu1ar.core.model.Source
 import kotlin.concurrent.thread
@@ -14,6 +15,8 @@ import kotlin.concurrent.thread
  */
 class SmsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        // The statement edition never declares this receiver (ADR-016); refuse anyway if something calls it directly.
+        if (!BuildConfig.SMS_CAPTURE) return
         if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
         val parts = Telephony.Sms.Intents.getMessagesFromIntent(intent) ?: return
         if (parts.isEmpty()) return

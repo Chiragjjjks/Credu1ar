@@ -93,9 +93,14 @@ export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
 # local.properties (gitignored) needs: sdk.dir=/opt/homebrew/share/android-commandlinetools
 ./gradlew :core:test                 # fast, JVM only
-./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease
+# Two editions (ADR-016): full (SMS + notifications + statements) and statement (no SMS permission). Same app id.
+./gradlew :app:testFullDebugUnitTest :app:lintFullDebug :app:assembleFullRelease :app:assembleStatementRelease :app:assembleFullDebug
+# APKs: app/build/outputs/apk/{full,statement}/{debug,release}/app-<edition>-<type>.apk
+scripts/check-editions.sh app/build/outputs/apk/full/release/app-full-release.apk app/build/outputs/apk/statement/release/app-statement-release.apk
 $ANDROID_HOME/emulator/emulator -avd mn35 -no-snapshot -no-audio &   # Android 35 arm64 image
-adb emu sms send HDFCBK "Rs.450.00 debited from A/c XX1234 on 29-10-26 to VPA zepto@axisbank (UPI Ref No 123456789012)"
+scripts/android-smoke.sh app/build/outputs/apk/full/debug/app-full-debug.apk        # SMS capture, emulator
+scripts/statement-smoke.sh app/build/outputs/apk/full/debug/app-full-debug.apk      # statement PDFs (also with the statement debug APK)
+python3 -I scripts/make-test-pdf.py core/src/test/resources/statements/<fixture>.txt out.pdf [--password X]   # fictional test PDF
 ```
 
 ## Repository map

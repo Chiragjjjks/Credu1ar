@@ -17,8 +17,24 @@ android {
         targetSdk = 37
         versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: versionCodeProp
         versionName = versionNameProp
-        // Whether this build can read SMS and notifications at all. The statement-only edition (ADR-016) sets it false.
-        buildConfigField("boolean", "SMS_CAPTURE", "true")
+    }
+
+    // Two editions from one codebase (ADR-016), sharing one application id so only one Credu1ar is ever installed.
+    //  - full:      SMS + notifications + bank statements. Its SMS permissions, receiver and listener live in src/full.
+    //  - statement: bank statements only. Its manifest declares no SMS permission, receiver or notification listener,
+    //               so it simply cannot read SMS (it is not a way around Play Protect's check; ADR-014 still holds).
+    // BuildConfig.SMS_CAPTURE says which one is running.
+    flavorDimensions += "edition"
+    productFlavors {
+        create("full") {
+            dimension = "edition"
+            isDefault = true
+            buildConfigField("boolean", "SMS_CAPTURE", "true")
+        }
+        create("statement") {
+            dimension = "edition"
+            buildConfigField("boolean", "SMS_CAPTURE", "false")
+        }
     }
 
     // Release signing comes from environment variables (CI secrets, or ~/.credu1ar/keystore.env locally).
