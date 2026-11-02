@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.github.chiragjjjks.credu1ar.BuildConfig
 import io.github.chiragjjjks.credu1ar.core.model.Category
 import io.github.chiragjjjks.credu1ar.core.model.Group
 import io.github.chiragjjjks.credu1ar.core.model.Money
@@ -31,6 +32,10 @@ class Nav(
     val openLedger: (Group?) -> Unit,
     val arm: () -> Unit,
     val loadSample: () -> Unit,
+    /** Opens Android's PDF picker; the import sheet takes it from there. */
+    val addStatement: () -> Unit,
+    /** Opens the sheet of payments behind one report bar: a [PaymentsKey] string. */
+    val openPayments: (String) -> Unit,
 )
 
 @Composable
@@ -45,6 +50,7 @@ fun MonthSwitcher(month: YearMonth, onChange: (YearMonth) -> Unit) {
 
 @Composable
 fun LiveStrip(s: AppModel.UiState) {
+    if (!BuildConfig.SMS_CAPTURE) { StatementModeStrip(s); return }
     val a = s.access
     // Honest status: sample data is not listening. Only real SMS or notification access counts as armed.
     val armed = a.sms || a.notifListener
@@ -67,8 +73,23 @@ fun LiveStrip(s: AppModel.UiState) {
     }
 }
 
+/** The statement edition can't listen, so its strip says what it is instead of pretending to be off. */
+@Composable
+private fun StatementModeStrip(s: AppModel.UiState) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        LiveDot(C.Mid, pulse = false)
+        Spacer(Modifier.width(8.dp))
+        Txt("STATEMENT MODE", T.Eyebrow.copy(color = C.Ink))
+        if (s.counts.sample > 0) { Spacer(Modifier.width(10.dp)); Txt("· SAMPLE DATA", T.Eyebrow.copy(color = C.Attention)) }
+        Spacer(Modifier.weight(1f))
+        if (s.statements.isNotEmpty()) Txt(Fmt.plural(s.statements.size, "STATEMENT", "STATEMENTS"), T.Eyebrow)
+    }
+}
+
 @Composable
 fun PulseScreen(s: AppModel.UiState, model: AppModel, nav: Nav) {
+    val report = s.report
+    if (report != null && s.statements.isNotEmpty()) { ReportPulse(s, report, model, nav); return }
     val sum = s.summary
     val isNow = s.month == YearMonth.now(io.github.chiragjjjks.credu1ar.core.insights.Insights.IST)
     LazyColumn(
@@ -76,6 +97,8 @@ fun PulseScreen(s: AppModel.UiState, model: AppModel, nav: Nav) {
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 120.dp),
     ) {
         item { LiveStrip(s) }
+        // Once a statement exists, the live month can be swapped for a statement period (the current month stays live).
+        if (s.statements.isNotEmpty()) item { Spacer(Modifier.height(14.dp)); PeriodToggle(s.by) { model.setBy(it) } }
         item { Spacer(Modifier.height(18.dp)); Eyebrow("Pulse", "01", trailing = { MonthSwitcher(s.month) { model.setMonth(it) } }) }
 
         if (sum == null || s.txns.isEmpty()) {
@@ -201,17 +224,27 @@ private fun EmptyPulse(s: AppModel.UiState, nav: Nav) {
             Txt("Only bank and payment alerts are kept. OTPs, chats and offers are dropped unread.", T.Body, color = C.Mid)
             return@Column
         }
-        Headline("Waiting for your", "first payment.")
-        Txt(
-            if (h is AppModel.History.Done) "No bank payments in your SMS since ${Fmt.shortDate(h.fromMillis)}. New ones are filed the moment they land."
-            else "Credu1ar files each payment the moment its SMS lands. Arm it once, or look around with fictional data first.",
-            T.Body, color = C.Mid,
-        )
-        Panel {
+        if (BuildConfig.SMS_CAPTURE) {
+            Headline("Waiting for your", "first payment.")
+            Txt(
+                if (h is AppModel.History.Done) "No bank payments in your SMS since ${Fmt.shortDate(h.fromMillis)}. Add a bank statement to see earlier months, or wait for the next one to land."
+                else "Add your bank statement to see where your money went. Or arm SMS once and each payment is filed the moment it lands.",
+                T.Body, color = C.Mid,
+            )
+        } else {
+            Headline("See where your", "money went.")
+            Txt("Add the statement PDF your bank emails you. It's read on this phone and never sent anywhere.", T.Body, color = C.Mid)
+        }
+        Panel(hot = true) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Eyebrow("Start here")
-                Box(Modifier.fillMaxWidth()) { PillButton("Arm it", primary = true, onClick = nav.arm) }
-                PillButton("Try with sample data", onClick = nav.loadSample)
+                PillButton("Add bank statement", primary = true, modifier = Modifier.fillMaxWidth(), onClick = nav.addStatement)
+                Txt(STATEMENT_FINE_LINE, T.Eyebrow.copy(lineHeight = T.Eyebrow.fontSize * 1.6f))
+                Spacer(Modifier.height(2.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (BuildConfig.SMS_CAPTURE) PillButton("Arm it", modifier = Modifier.weight(1f), onClick = nav.arm)
+                    PillButton("Try with sample data", modifier = Modifier.weight(1f), onClick = nav.loadSample)
+                }
             }
         }
     }

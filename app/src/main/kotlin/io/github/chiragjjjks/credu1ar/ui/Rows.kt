@@ -18,10 +18,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import io.github.chiragjjjks.credu1ar.core.insights.Coverage
 import io.github.chiragjjjks.credu1ar.core.insights.Insights
+import io.github.chiragjjjks.credu1ar.core.insights.Reports
+import io.github.chiragjjjks.credu1ar.core.model.Category
 import io.github.chiragjjjks.credu1ar.core.model.Direction
 import io.github.chiragjjjks.credu1ar.core.model.Txn
+import io.github.chiragjjjks.credu1ar.data.StatementRecord
+import io.github.chiragjjjks.credu1ar.ingest.ImportProgress
 import java.time.Instant
+import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -86,7 +92,120 @@ object Fmt {
     fun sheetWhen(t: Txn, now: Long): String =
         if (t.timeKnown) "${dayLabel(t.occurredAtMillis, now)} · ${time(t.occurredAtMillis)}" else dayLabel(t.occurredAtMillis, now)
 
+    // ------------------------------------------------------------------------------------------- statements
+
+    private val dayMon = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
+    private fun thisYear() = LocalDate.now(zone).year
+
+    /** "16 Sep". */
+    fun dayMonth(d: LocalDate): String = d.format(dayMon)
+
+    /** "16 Sep → 16 Oct", plus the year when asked for or when it isn't this year ("16 Sep → 16 Oct 2026"). */
+    fun period(from: LocalDate, to: LocalDate, withYear: Boolean = false): String {
+        val left = if (from.year != to.year) "${dayMonth(from)} ${from.year}" else dayMonth(from)
+        return "$left → ${dayMonth(to)}" + if (withYear || to.year != thisYear()) " ${to.year}" else ""
+    }
+
+    /** The switcher's month: "OCT", or "OCT 2025" when it isn't this year. */
+    fun monthShort(ym: YearMonth): String {
+        val m = ym.month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).uppercase()
+        return if (ym.year == thisYear()) m else "$m ${ym.year}"
+    }
+
+    /** "KOTAK ••1234": the bank and the account's last four digits, never more. */
+    fun account(bank: String?, tail: String?): String =
+        listOfNotNull(bank?.uppercase(), tail?.let { "••$it" }).joinToString(" ").ifEmpty { "STATEMENT" }
+
+    /** System's list line: "16 SEP → 16 OCT · 202 ROWS ✓". */
+    fun statementLine(r: StatementRecord): String =
+        "${period(r.from, r.to).uppercase()} · ${r.rows} ${if (r.rows == 1) "ROW" else "ROWS"}${if (r.complete) " ✓" else ""}"
+
+    /** "READING STATEMENT · PAGE 3 OF 8 · 143 ROWS" (or "FILE 2 OF 3 · …" when several were picked). */
+    fun importProgress(p: ImportProgress?): String {
+        if (p == null) return "OPENING STATEMENT"
+        val head = if (p.files > 1) "FILE ${p.file} OF ${p.files}" else "READING STATEMENT"
+        val page = if (p.pages > 0) " · PAGE ${p.page} OF ${p.pages}" else ""
+        return "$head$page · ${p.rows} ${if (p.rows == 1) "ROW" else "ROWS"}"
+    }
+
+    fun plural(n: Int, one: String, many: String = one + "s"): String = "$n ${if (n == 1) one else many}"
+
+    // ------------------------------------------------------------------------------------------- report copy
+
+    private fun full(ym: YearMonth) = ym.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)
+
+    /** BY MONTH's label: `OCT`, or `SEP · 16–30` when only part of the month is covered. */
+    fun monthLabel(ym: YearMonth, c: Coverage?): String {
+        val first = c?.firstCovered; val last = c?.lastCovered
+        return if (c?.partial == true && first != null && last != null) "${monthShort(ym)} · ${first.dayOfMonth}–${last.dayOfMonth}" else monthShort(ym)
+    }
+
+    /** Under the big total: `SPENT IN OCTOBER`, `SPENT · 16–30 SEP` (part month) or `SPENT · 16 SEP → 16 OCT`. */
+    fun spentCaption(r: Reports.Report): String {
+        val c = r.coverage
+        val first = c?.firstCovered; val last = c?.lastCovered
+        return when {
+            r.isCalendarMonth && c?.partial == true && first != null && last != null ->
+                "SPENT · ${first.dayOfMonth}–${last.dayOfMonth} ${first.month.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).uppercase()}"
+            r.isCalendarMonth -> "SPENT IN ${monthName(YearMonth.from(r.from)).uppercase()}"
+            else -> "SPENT · ${period(r.from, r.to).uppercase()}"
+        }
+    }
+
+    /** What a ▲▼ compares with. Only ever shown between two fully covered periods. */
+    fun versus(r: Reports.Report): String =
+        if (r.isCalendarMonth) "VS ${monthName(YearMonth.from(r.from).minusMonths(1)).uppercase()}"
+        else "VS THE ${r.days} DAYS BEFORE"
+
+    /** "29%", or "<1%" so a real but tiny share never reads as nothing. */
+    fun share(part: Long, total: Long): String {
+        if (total <= 0) return "0%"
+        val p = part * 100 / total
+        return if (p == 0L && part > 0) "<1%" else "$p%"
+    }
+
+    /** Not-spending line labels: "card bill ₹12,300 · own accounts ₹5,000 · investments ₹3,000". */
+    fun moveLabel(c: Category): String = when (c) {
+        Category.CARD_BILL -> "card bill"
+        Category.SELF_TRANSFER -> "own accounts"
+        Category.INVESTMENTS -> "investments"
+        else -> c.label.lowercase()
+    }
+
+    /** Line one of the report headline, without the amount formatting (see [reportHeadline]). */
+    internal fun spentLine(r: Reports.Report, spent: String): String {
+        val c = r.coverage
+        val first = c?.firstCovered; val last = c?.lastCovered
+        val ym = YearMonth.from(r.from)
+        return when {
+            r.spentPaise == 0L && r.isCalendarMonth -> "No spending in ${monthName(ym)}."
+            r.spentPaise == 0L -> "No spending from ${dayMonth(r.from)} to ${dayMonth(r.to)}."
+            r.isCalendarMonth && c?.partial == true && first != null && last != null ->
+                "You spent $spent from ${first.dayOfMonth} to ${last.dayOfMonth} ${full(ym)}" + if (ym.year != thisYear()) " ${ym.year}." else "."
+            r.isCalendarMonth -> "You spent $spent in ${monthName(ym)}."
+            else -> "You spent $spent from ${dayMonth(r.from)} to ${dayMonth(r.to)}."
+        }
+    }
+
     fun cadence(days: Int) = when (days) { 7 -> "weekly"; 30 -> "monthly"; 91 -> "quarterly"; else -> "yearly" }
+}
+
+/**
+ * The report's two-line headline. Line two names the group that led; "led" ignores the Not sorted bar. A part month
+ * says how many days it covers instead, because it can't be compared with anything.
+ */
+@Composable
+fun reportHeadline(r: Reports.Report): Pair<String, String?> {
+    val line1 = Fmt.spentLine(r, rupees(r.spentPaise))
+    val c = r.coverage
+    val lead = r.byGroup.firstOrNull()
+    val line2 = when {
+        r.isCalendarMonth && c?.partial == true -> "That's ${c.coveredDays} of ${c.totalDays} days."
+        r.spentPaise == 0L -> if (r.incomePaise > 0) "${rupees(r.incomePaise)} came in." else null
+        lead == null -> "None of it is sorted yet."
+        else -> "${lead.group.label} led at ${rupees(lead.paise)}."
+    }
+    return line1 to line2
 }
 
 @Composable

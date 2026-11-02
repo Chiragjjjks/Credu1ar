@@ -256,7 +256,30 @@ class AppModel(private val app: Context) {
     // ------------------------------------------------------------------------------------------------ actions
 
     fun setMonth(m: YearMonth) { month = m; refresh() }
-    fun setBy(b: PulseBy) { by = b; refresh() }
+    /**
+     * Switch BY STATEMENT / BY MONTH and land on the matching period: a statement opens on the month it covers most
+     * (the later one on a tie); a month opens on the newest statement that touches it.
+     */
+    fun setBy(b: PulseBy) {
+        val s = _state.value
+        if (b == by || s.statements.isEmpty()) { by = b; refresh(); return }
+        if (b == PulseBy.MONTH) {
+            val st = s.statements.firstOrNull { it.id == statementId } ?: s.statements.first()
+            var m = YearMonth.from(st.from)
+            var best = m; var bestDays = -1
+            while (!m.isAfter(YearMonth.from(st.to))) {
+                val days = Reports.coverage(listOf(CoveredRange(st.from, st.to)), m.atDay(1), m.atEndOfMonth()).coveredDays
+                if (days >= bestDays) { best = m; bestDays = days }
+                m = m.plusMonths(1)
+            }
+            month = best
+        } else {
+            val first = month.atDay(1); val last = month.atEndOfMonth()
+            s.statements.firstOrNull { !it.to.isBefore(first) && !it.from.isAfter(last) }?.let { statementId = it.id }
+        }
+        by = b
+        refresh()
+    }
     fun showStatement(id: Long) { statementId = id; by = PulseBy.STATEMENT; refresh() }
 
     fun setCategory(id: Long, category: Category, remember: Boolean) { scope.launch(Dispatchers.IO) { repo.setCategory(id, category, remember) } }

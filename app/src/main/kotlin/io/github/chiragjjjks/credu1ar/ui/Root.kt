@@ -60,6 +60,7 @@ fun Credu1arRoot(model: AppModel, host: Host, pendingTxn: State<Long?>, onPendin
     var showReview by rememberSaveable { mutableStateOf(false) }
     var showArm by rememberSaveable { mutableStateOf(false) }
     var ledgerGroupId by rememberSaveable { mutableStateOf<String?>(null) }
+    var paymentsKey by rememberSaveable { mutableStateOf<String?>(null) }
     var introDone by remember { mutableStateOf(IntroState.shown) }
     var autoArmChecked by rememberSaveable { mutableStateOf(false) }
 
@@ -84,12 +85,27 @@ fun Credu1arRoot(model: AppModel, host: Host, pendingTxn: State<Long?>, onPendin
             openLedger = { g -> ledgerGroupId = g?.id; tab = Tab.LEDGER },
             arm = { showArm = true },
             loadSample = { model.loadSample(); model.setOnboarded(true) },
+            addStatement = { host.pickStatements() },
+            openPayments = { paymentsKey = it },
         )
     }
+    val importing = s.import !is AppModel.Import.Idle
+    // Keep the last state on screen while the sheet slides away, so it doesn't collapse mid-animation.
+    var shownImport by remember { mutableStateOf<AppModel.Import>(AppModel.Import.Idle) }
+    if (importing) shownImport = s.import
+    fun closeImport() {
+        when (s.import) {
+            is AppModel.Import.Locked -> model.cancelImport()
+            is AppModel.Import.Done -> model.dismissImport()
+            else -> Unit // a read in progress can't be dismissed; it finishes in seconds
+        }
+    }
 
-    BackHandler(enabled = sheetId != null || showReview || showArm || tab != Tab.PULSE) {
+    BackHandler(enabled = importing || sheetId != null || paymentsKey != null || showReview || showArm || tab != Tab.PULSE) {
         when {
+            importing -> closeImport()
             sheetId != null -> sheetId = null
+            paymentsKey != null -> paymentsKey = null
             showArm -> showArm = false
             showReview -> showReview = false
             else -> tab = Tab.PULSE
@@ -116,18 +132,41 @@ fun Credu1arRoot(model: AppModel, host: Host, pendingTxn: State<Long?>, onPendin
                 ArmScreen(s, model, host) { showArm = false }
             }
 
-            val open = sheetId?.let { id -> s.txns.firstOrNull { it.id == id } }
-            AnimatedVisibility(open != null, enter = fadeIn(tween(180)), exit = fadeOut(tween(160))) {
-                Box(Modifier.fillMaxSize().background(Color(0xB3000000)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { sheetId = null })
+            // The payments behind one report bar; a row opens the payment sheet above it to teach a category.
+            val payments = paymentsKey?.let { k -> s.report?.let { PaymentsKey.select(k, s.txns, it) } }
+            Scrim(payments != null) { paymentsKey = null }
+            AnimatedVisibility(payments != null, modifier = Modifier.align(Alignment.BottomCenter), enter = slideInVertically(tween(320, easing = Ease.Out)) { it }, exit = slideOutVertically(tween(220)) { it }) {
+                if (payments != null) PaymentsSheet(payments, s.now, nav) { paymentsKey = null }
             }
+
+            val open = sheetId?.let { id -> s.txns.firstOrNull { it.id == id } }
+            Scrim(open != null) { sheetId = null }
             AnimatedVisibility(open != null, modifier = Modifier.align(Alignment.BottomCenter), enter = slideInVertically(tween(320, easing = Ease.Out)) { it }, exit = slideOutVertically(tween(220)) { it }) {
                 if (open != null) TxnSheet(open, model, s.now) { sheetId = null }
+            }
+
+            Scrim(importing) { closeImport() }
+            AnimatedVisibility(importing, modifier = Modifier.align(Alignment.BottomCenter), enter = slideInVertically(tween(320, easing = Ease.Out)) { it }, exit = slideOutVertically(tween(220)) { it }) {
+                ImportSheet(
+                    s, shownImport, model,
+                    onSeeIt = { showArm = false; showReview = false; paymentsKey = null; tab = Tab.PULSE; model.setOnboarded(true) },
+                    onSort = { showArm = false; paymentsKey = null; tab = Tab.PULSE; showReview = true; model.setOnboarded(true) },
+                    onPickAgain = { host.pickStatements() },
+                )
             }
 
             AnimatedVisibility(!introDone, exit = slideOutVertically(tween(700, easing = Ease.InOut)) { -it } + fadeOut(tween(700))) {
                 Intro { IntroState.shown = true; introDone = true }
             }
         }
+    }
+}
+
+/** The dimmed backdrop behind a bottom sheet; a tap outside the sheet closes it. */
+@Composable
+private fun Scrim(visible: Boolean, onDismiss: () -> Unit) {
+    AnimatedVisibility(visible, enter = fadeIn(tween(180)), exit = fadeOut(tween(160))) {
+        Box(Modifier.fillMaxSize().background(Color(0xB3000000)).clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss))
     }
 }
 
