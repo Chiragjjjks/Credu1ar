@@ -4,12 +4,16 @@
 # does not apply to it (docs/INSTALL.md, Route C). Phone setup, once: Settings → About phone → tap Build number
 # 7 times, then Developer options → USB debugging (cable) or Wireless debugging (Wi-Fi, Android 11+).
 #
-#   scripts/phone-install.sh                  # build the release APK (signed with your private key) and install it
+#   scripts/phone-install.sh                  # build the full edition's release APK (signed with your private key), install it
+#   scripts/phone-install.sh --statement      # the same for the statement-only edition (no SMS permission; ADR-016)
 #   scripts/phone-install.sh path/to/app.apk  # install a specific APK, e.g. one downloaded from Releases
 #   scripts/phone-install.sh pair IP:PORT     # Wi-Fi, once: Wireless debugging → "Pair device with pairing code";
 #                                             # adb then asks for the 6-digit code shown on the phone
 #   scripts/phone-install.sh connect IP:PORT  # Wi-Fi, each session: the IP:PORT shown at the top of Wireless debugging
+# Both editions share one app id, so installing one replaces the other (same key: your data stays).
 set -euo pipefail
+EDITION=full
+if [ "${1:-}" = --statement ]; then EDITION=statement; shift; fi
 # Resolve a relative APK path before moving to the repo root.
 if [ -n "${1:-}" ] && [ "$1" != pair ] && [ "$1" != connect ] && [ -f "$1" ]; then set -- "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"; fi
 cd "$(dirname "$0")/.."
@@ -26,8 +30,13 @@ if [ -z "$APK" ]; then
   # Same key every time, so later builds install over this one and keep your data.
   [ -f ~/.credu1ar/keystore.env ] || { echo "No private key in ~/.credu1ar/ — pass an APK path instead." >&2; exit 1; }
   set -a; . ~/.credu1ar/keystore.env; set +a
-  ./gradlew -q :app:assembleRelease
-  APK=app/build/outputs/apk/release/app-release.apk
+  if [ $EDITION = statement ]; then
+    ./gradlew -q :app:assembleStatementRelease
+    APK=app/build/outputs/apk/statement/release/app-statement-release.apk
+  else
+    ./gradlew -q :app:assembleFullRelease
+    APK=app/build/outputs/apk/full/release/app-full-release.apk
+  fi
 fi
 [ -f "$APK" ] || { echo "No such APK: $APK" >&2; exit 1; }
 
