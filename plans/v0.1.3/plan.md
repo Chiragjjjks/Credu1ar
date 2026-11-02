@@ -1,6 +1,6 @@
 # v0.1.3: upload last month's bank statement, see where it went
 
-**Status:** release pending CI · **Updated:** 2026-11-02 · **Last release:** v0.1.2
+**Status:** released · **Updated:** 2026-11-02 · **Last release:** v0.1.2
 
 Read [AGENTS.md](../../AGENTS.md) first. This is the checklist for the statement feature; daily work goes in `plans/week-NN/day-N/planned.md`. Status words are the same as in [v0.2.0](../v0.2.0/plan.md). v0.2.0 keeps its scope (rules editor, merchant pages, budgets) and follows this release.
 
@@ -138,4 +138,4 @@ Builders are Claude agents in separate git worktrees, each owning distinct files
 | 4 | DONE | **Agent C (UI):** the button, picker, password sheet, progress/result copy, Pulse toggle + report + Not sorted bar + bar sheet, System → Bank statements, statement edition hides SMS steps. | Screenshots by C and the lead; real picker flow on the emulator. |
 | 5 | DONE | Merge, then end-to-end on the emulator with the fictional fixture PDFs, and privately with the owner's real file (totals match the bank's summary). | `272305b`: real statement complete (privately, then wiped); headline and Insights fixes. |
 | 6 | DONE | Independent Claude review; fix findings. | 0 blockers, 4 should-fix + nits → `f735aae`. |
-| 7 | DOING | Release v0.1.3 (both APKs) under the standing approval once the exact-commit CI is green. | Release page and checksums checked. |
+| 7 | DONE | Release v0.1.3 (both APKs) under the standing approval once the exact-commit CI is green. | [v0.1.3](https://github.com/Chiragjjjks/Credu1ar/releases/tag/v0.1.3): CI `41429267172` on `2caff76`, tag run `41430461459`; both APKs + checksums verified; statement APK has no SMS permission. |

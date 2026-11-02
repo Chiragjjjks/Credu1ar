@@ -30,7 +30,7 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 5. Decisions with lasting effect also go in `docs/DECISIONS.md` (short ADR entries).
 6. Keep the active version checklist (`plans/v0.2.0/plan.md`) current in the same commit as each task. Record `TODO`, `DOING`, `DONE`, `BLOCKED`, `DEFERRED` or `NO`; completed tasks need evidence, and blocked/deferred/dropped tasks need a reason.
 
-## Current state: v0.1.3 (2026-11-02, week 1 day 5) — bank statements + statement-only edition
+## Current state: v0.1.3 released (2026-11-02, week 1 day 5) — bank statements + statement-only edition
 
 **Day 5 (2026-11-02):**
 - **Owner's requests:**
@@ -52,7 +52,7 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
   - The v1→v2 migration kept 237 rows.
   - The real picker flow was tested on an emulator.
   - The owner's real statement imported complete, matching the bank's closing balance (read privately on the emulator, then wiped; nothing committed).
-- **Release:** see the day-5 journal for CI/tag status.
+- **Released:** CI green on `2caff76` (run 41429267172); tag run 41430461459 published **[v0.1.3](https://github.com/Chiragjjjks/Credu1ar/releases/tag/v0.1.3)**. Verified: `Credu1ar-v0.1.3-android.apk` (1,469,420 bytes) and `Credu1ar-v0.1.3-statement.apk` (1,452,092 bytes), `SHA256SUMS.txt` OK, `/releases/latest`=v0.1.3, versionCode 10030, statement APK permissions = POST_NOTIFICATIONS + INTERNET only, launches without a crash. Signer: CI throwaway key `1df5e9f8…` (owner still needs `scripts/set-signing-secrets.sh`).
 
 ### v0.1.2 released (2026-10-31, week 1 day 3) — automatic month import; Play Protect answered
 

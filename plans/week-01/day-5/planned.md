@@ -1,7 +1,7 @@
 # Week 1 · Day 5 — 2026-11-02 (Monday)
 
 **Version in progress:** v0.1.3 (last tagged: v0.1.2)
-**Status:** release pending CI
+**Status:** done — v0.1.3 published
 
 ## Plan for today
 **First request (paraphrased).** "Since the SMS is not working properly", add a button to upload last month's bank statement and show a simple dashboard of what happened, with category bars (Shopping etc.) like Navi. Plan first, including how the UI will look.
@@ -17,10 +17,10 @@
 - [x] Three builder agents in worktrees, merged A → B → C
 - [x] End-to-end on emulators (fictional PDFs via the real picker; the real statement privately), fixes (`272305b`)
 - [x] Independent review → fixes (`f735aae`)
-- [ ] Release v0.1.3 (both APKs) once the exact-commit CI is green
+- [x] Release v0.1.3 (both APKs): CI green on `2caff76` (run 41429267172) → tag → run 41430461459 → [published](https://github.com/Chiragjjjks/Credu1ar/releases/tag/v0.1.3)
 
 ## What is happening now
-Release commit pushed; waiting for CI before tagging.
+v0.1.3 published. Waiting for the owner to try the statement edition with their own PDF.
 
 ## Done
 - `2bbe73c` plan + mockup · `83c21d9` journal/index · `b1714f0` fictional Kotak fixtures + debug `pdftext` probe · `d03af1d` shared foundation (Kotak reader, completeness checks, keys, Reports, stubs, ADR-015/016)
@@ -57,5 +57,13 @@ Release commit pushed; waiting for CI before tagging.
 - Install the statement edition and try their own PDF; then tap "Mark these N as people".
 - Still open: `scripts/set-signing-secrets.sh`; the full app via `scripts/phone-install.sh` for live SMS.
 
+## Released
+- Downloaded both assets: `SHA256SUMS.txt` OK; `/releases/latest` = v0.1.3; versionCode 10030.
+- `aapt2`: the full APK has RECEIVE_SMS/READ_SMS; the statement APK has only POST_NOTIFICATIONS + INTERNET.
+- The published statement APK installs and launches on the emulator with no crash.
+- Signer: CI throwaway key `1df5e9f8…`.
+- Cleanup: the private copies of the real statement (text dumps, screenshots) were deleted from /tmp; emulator app data was wiped; agent worktrees were removed.
+
 ## Next
-CI green on the release commit → tag v0.1.3 → verify both APKs and checksums on the release page.
+- Owner: install the statement edition and add the Kotak PDF; tap "Mark these N as people".
+- Then resume [`plans/v0.2.0/plan.md`](../../v0.2.0/plan.md) (rules editor first), or a second bank if the owner sends one.
