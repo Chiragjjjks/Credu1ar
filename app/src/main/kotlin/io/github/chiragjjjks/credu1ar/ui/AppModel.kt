@@ -138,6 +138,7 @@ class AppModel(private val app: Context) {
     @Volatile private var statementId: Long? = null
     /** Set when an import finishes: the next recompute opens Pulse on the best period to look at. */
     @Volatile private var openBestPeriod = false
+    @Volatile private var coldStart = true
     /** The files of the import in progress, kept only so a locked PDF can be retried with its password. */
     @Volatile private var picked: List<Uri> = emptyList()
     /** One inbox read at a time from the UI: the permission callback and onResume both ask, the second must not race. */
@@ -162,6 +163,13 @@ class AppModel(private val app: Context) {
         val statements = repo.statements()
         val ranges = repo.coveredRanges()
         if (openBestPeriod && statements.isNotEmpty()) { openBestPeriod = false; openBest(statements, ranges) }
+        if (coldStart) {
+            coldStart = false
+            // Opening the app with statements but nothing yet this month: show the statement, not an empty month.
+            val thisMonth = YearMonth.now(Insights.IST)
+            val anyThisMonth = txns.any { YearMonth.from(Instant.ofEpochMilli(it.occurredAtMillis).atZone(Insights.IST)) == thisMonth }
+            if (statements.isNotEmpty() && !anyThisMonth && month == thisMonth) openBest(statements, ranges)
+        }
         val view = pulseView(txns, statements, ranges, now)
         val s = Insights.monthSummary(txns, month, now)
         val split = Insights.groceriesSplit(s)
@@ -221,7 +229,9 @@ class AppModel(private val app: Context) {
         val first = month.atDay(1)
         val last = month.atEndOfMonth()
         val covered = Reports.coverage(ranges, first, minOf(last, today)).coveredDays
-        if (month == current && covered == 0) return PulseView(st.id, null, emptyList(), oldest)
+        // Full app: the current month stays live (ring, pace, ticker) until a statement covers it. The statement edition
+        // has nothing live, so its current month is a report like any other.
+        if (BuildConfig.SMS_CAPTURE && month == current && covered == 0) return PulseView(st.id, null, emptyList(), oldest)
         // A month no statement touches is read like SMS-only data (treated as complete), so it still compares.
         val report = Reports.month(txns, month, if (covered > 0) ranges else null)
         val behind = statements.filter { !it.to.isBefore(first) && !it.from.isAfter(last) }
