@@ -30,6 +30,8 @@ These remain visible but are outside the first three feature milestones. Revisit
 - **DEFERRED:** encrypted backup/restore and app lock — preserve learned rules as well as payments.
 - **DEFERRED:** home-screen widget, monthly recap and decorative grain.
 
+**PLANNED (separate delivery, v0.1.3):** upload last month's bank statement → simple month report (owner request 2026-11-02). Checklist: [v0.1.3](../v0.1.3/plan.md). It goes first; this milestone keeps its scope.
+
 **DONE (separate delivery, v0.1.2):** automatic month import on first SMS link and "Add <month>" (owner request 2026-10-31; ADR-013). Shipped as a point release so this milestone keeps its scope. Evidence: week 1 day 3 journal.
 
 **DONE (separate delivery):** [landing site published](https://chiragjjjks.github.io/Credu1ar/); workflow `40920360529` passed, public assets and APK link verified. See the daily journal.

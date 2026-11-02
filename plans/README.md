@@ -2,7 +2,7 @@
 
 Every day that work happens gets one folder and one file. Anyone (human or agent) can read `plans/` from week 1 to now and know what was planned, what happened, what was decided and what is next. Version checklists track upcoming work across days.
 
-**Next version:** [v0.2.0 checklist](v0.2.0/plan.md).
+**Next version:** [v0.1.3 checklist](v0.1.3/plan.md) (bank statement upload), then [v0.2.0](v0.2.0/plan.md).
 
 ```
 plans/
@@ -60,3 +60,6 @@ One or two lines: the thing being worked on this minute.
 | Week | Day | Date | Headline |
 |---|---|---|---|
 | 1 | 1 | 2026-10-29 | Research, plan, repo, core parser, app skeleton (see file) |
+| 1 | 2 | 2026-10-30 | Play Protect block explained (`docs/INSTALL.md`); v0.1.1 |
+| 1 | 3 | 2026-10-31 | Automatic month import on SMS link; Play Protect answered; v0.1.2 |
+| 1 | 5 | 2026-11-02 | Plan + mockup: upload last month's bank statement → simple report (v0.1.3) |

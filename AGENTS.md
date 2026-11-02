@@ -66,6 +66,7 @@ Owner: Chirag (GitHub `Chiragjjjks`), Bengaluru. Personal use. Not affiliated wi
 
 ## Next, in order
 
+0. **v0.1.3, bank statement upload (owner request 2026-11-02):** follow [`plans/v0.1.3/plan.md`](plans/v0.1.3/plan.md) (mockup alongside). The owner sends a real statement; it never enters git or docs, and only a fictional copy of its layout becomes a fixture.
 1. Owner: get the app onto the phone. Easiest: plug in or pair Wi-Fi debugging and let the agent run `scripts/phone-install.sh` (privately signed, updates in place). Then `docs/PHONE-TEST.md` and paste back the Diagnostics report; add real formats as fixtures before changing parser rules.
 2. Owner: run `scripts/set-signing-secrets.sh` (personal `gh` login) so Releases stop using a new throwaway key each time. Decide whether to pursue Play internal testing (ADR-014, Route C).
 3. Follow [`plans/v0.2.0/plan.md`](plans/v0.2.0/plan.md): rules editor, then merchant pages and category budgets. Later releases need fresh approval.
