@@ -32,7 +32,7 @@ object Ingest {
                 if (signal.receivedAtMillis > repo.metaLong("last_sms_at")) repo.setMeta("last_sms_at", signal.receivedAtMillis.toString())
             }
             Source.NOTIFICATION -> { repo.inc("n_notif"); repo.setMeta("last_notif_at", System.currentTimeMillis().toString()) }
-            Source.SAMPLE -> Unit
+            Source.STATEMENT, Source.SAMPLE -> Unit
         }
         when (val outcome = Pipeline.process(signal, rules ?: repo.rules())) {
             Outcome.Ignored -> repo.inc("n_ignored")

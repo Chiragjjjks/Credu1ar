@@ -37,8 +37,8 @@ object Dedup {
         }
     }
 
-    /** SMS has the full text, so it wins over a (possibly truncated) notification; samples never win. */
+    /** SMS has the full text and the time, so it wins over a (possibly truncated) notification and a date-only statement row; samples never win. */
     fun prefer(existing: Source, incoming: Source): Boolean = rank(incoming) > rank(existing)
 
-    private fun rank(s: Source) = when (s) { Source.SMS -> 2; Source.NOTIFICATION -> 1; Source.SAMPLE -> 0 }
+    private fun rank(s: Source) = when (s) { Source.SMS -> 3; Source.NOTIFICATION -> 2; Source.STATEMENT -> 1; Source.SAMPLE -> 0 }
 }

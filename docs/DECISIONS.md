@@ -69,3 +69,30 @@ Short entries. Newest last. Add one whenever a choice will outlive the day. Form
 **Decision.** No app change can lift it, and we will not hide, delay, split or obfuscate permissions to slip past it (that is evasion). OTP auto-fill (SMS Retriever / User Consent APIs) cannot read bank alerts: Retriever needs our app hash inside the message; User Consent needs a tap per message inside a 5-minute window. Supported routes, best first: (1) `adb install` from this Mac over USB or Wi-Fi (`scripts/phone-install.sh`): not an internet sideload, and the privately signed build keeps updates working; (2) turn Play Protect scanning off for the install, then back on (documented setting, but Google does not promise it lifts this block); (3) Google Play internal testing track: the policy has a "SMS-based money management" exception, but it needs a $25 developer account, ID verification, a Permissions Declaration with video, possibly weeks of review, and re-signing by Play. Option 3 reverses the "no Play Store" plan, so it is the owner's call.
 **Consequences.** The install guide leads with adb. Android developer verification (enforced in four other countries from 30 Sep 2026; India "2027 and beyond") will not block adb installs; revisit when it reaches India.
 
+
+## ADR-015 — Bank statements are read on the phone, row by row, proven by the running balance
+**Context.** The owner (2026-11-02) can't use SMS capture yet and asked to upload last month's bank statement and see a simple report with a bar per category, then sent a real Kotak statement (16 Sep–16 Oct 2026, 202 rows) and asked to "think about multiple months". Three Claude agents (designer, architect, critic) discussed it in two rounds.
+**Decision.**
+- **Reading.** Android's own `PdfRenderer` text API reads the PDF: it is built into Android 15+, and 31–34 get it through `PdfRendererPreV` with SDK extension 13. It adds 0 bytes to the APK, supports passwords, and the file is never copied to disk.
+  - On the owner's statement it returns one text block per page.
+  - Pure `:core` layouts (`statement/`) turn page text into rows. Rows are found by their start line (`<#> <dd Mon yyyy>`), never by where the amounts are.
+  - The Withdrawal/Deposit columns collapse in the text, so the direction comes from the change in the running balance.
+- **Completeness.** A statement is "complete ✓" only if every row's amount equals its balance change, row numbers run 1..N, the opening and closing balances match the account summary, and the page count matches "Page x of N".
+  - A row that doesn't add up is left out and listed; the chain re-anchors on its printed balance, so one bad row is one issue, not a cascade.
+- **Identity.**
+  - A row's key is `bank:tail:date:D|C:amount:balanceAfter` (plus `#k` for identical keys within one file). Overlapping or re-downloaded statements therefore add nothing twice.
+  - Row number, page and narration are left out of the key because they change between files.
+  - Rows carry no time, so they are stamped at 12:00 IST plus their place in the day (seconds) and flagged `timeKnown=false`. They are kept out of time-of-day charts.
+- **SMS and statements together.** A statement row and an SMS/notification row are the same payment by UPI reference (RRN), else one-to-one by direction + amount + date ±1 day. The SMS row wins: it has the time.
+- **Months.** Coverage is tracked per statement period. A month that is only partly covered says which days it covers, never compares with another month, and works out "per day" over covered days only. Pulse gets `BY STATEMENT · BY MONTH`.
+- **Scope.** Kotak PDF only in v0.1.3; CSV/XLSX and other banks later, each a fictional fixture first. The real statement never enters git or docs.
+**Consequences.** New categories: Bank charges & fees (Other) and Interest (Money in). DB schema v2 (first real migration). Debits we could only guess as "a person" (or not at all) show in their own "Not sorted yet" bar, so People & Cash isn't inflated.
+
+## ADR-016 — A statement-only edition that never asks for SMS
+**Context.** Play Protect blocks browser installs of apps that declare SMS or notification-listener permissions (ADR-014), so the owner can't install the full app from Releases. On 2026-11-02 they approved a second APK ("Go ahead").
+**Decision.**
+- Two product flavors from one codebase: `full` (SMS + notifications + statements, as before) and `statement` (no SMS permissions, no SMS receiver, no notification listener in its manifest).
+- The `statement` edition simply cannot read SMS. It does not hide or delay anything, and no permission is added later, so it is not a way around the check (ADR-014 still holds).
+- Both flavors share one application id, so only one Credu1ar is installed at a time.
+- Each release publishes both APKs.
+**Consequences.** Moving from the statement edition to the full app means uninstalling and installing the full one (different signing keys until the owner sets the signing secrets).

@@ -26,6 +26,18 @@ data class TxnDetail(
     val source: Source, val userSet: Boolean, val receivedAtMillis: Long,
 )
 
+/** One imported bank statement, as listed in System → Bank statements. */
+data class StatementRecord(
+    val id: Long,
+    val bank: String,
+    val accountTail: String?,
+    val from: java.time.LocalDate,
+    val to: java.time.LocalDate,
+    val rows: Int,
+    val complete: Boolean,
+    val importedAtMillis: Long,
+)
+
 data class Unparsed(val id: Long, val receivedAtMillis: Long, val sender: String, val reason: String, val body: String)
 
 /** The only class that talks SQL. Writes bump [version] so the UI knows to recompute. */
@@ -277,6 +289,17 @@ class Repo(private val db: Db) {
     }
 
     // ------------------------------------------------------------------------------------------------ export
+
+    // ------------------------------------------------------------------------------------------------ statements
+
+    /** Imported statements, newest period first. */
+    fun statements(): List<StatementRecord> = emptyList() // TODO(agent B)
+
+    /** Days with a complete record: every statement's period, per account. Feeds Reports.coverage. */
+    fun coveredRanges(): List<io.github.chiragjjjks.credu1ar.core.insights.CoveredRange> = emptyList() // TODO(agent B)
+
+    /** Remove one import. Rows also covered by another statement, or matched to an SMS, stay. */
+    fun deleteStatement(id: Long) { /* TODO(agent B) */ }
 
     fun exportCsv(out: Appendable) {
         out.append("date,direction,amount_inr,merchant,category,group,instrument,bank,account_tail,reference\n")

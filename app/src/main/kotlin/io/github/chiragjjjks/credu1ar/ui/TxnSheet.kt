@@ -89,7 +89,7 @@ fun TxnSheet(t: Txn, model: AppModel, now: Long, onClose: () -> Unit) {
         Eyebrow("What was read", "02")
         val d = detail
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Fact("Source", when (d?.source) { Source.SMS -> "SMS"; Source.NOTIFICATION -> "Notification"; Source.SAMPLE -> "Sample data"; null -> "…" })
+            Fact("Source", when (d?.source) { Source.SMS -> "SMS"; Source.NOTIFICATION -> "Notification"; Source.STATEMENT -> "Bank statement"; Source.SAMPLE -> "Sample data"; null -> "…" })
             Fact("Instrument", t.instrument.name.lowercase().replaceFirstChar { it.uppercase() })
             Fact("Bank", t.bank ?: "—")
             Fact("Account / card", t.accountTail?.let { "••$it" } ?: "—")

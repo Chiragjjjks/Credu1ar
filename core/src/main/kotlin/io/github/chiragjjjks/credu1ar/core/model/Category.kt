@@ -75,6 +75,7 @@ enum class Category(val id: String, val label: String, val group: Group) {
 
     // Other
     EDUCATION("education", "Education", Group.OTHER),
+    BANK_CHARGES("bank_charges", "Bank charges & fees", Group.OTHER),
     UNCATEGORISED("uncategorised", "Uncategorised", Group.OTHER),
 
     // Not spending
@@ -85,6 +86,7 @@ enum class Category(val id: String, val label: String, val group: Group) {
     // Money in
     SALARY("salary", "Salary", Group.INCOME),
     REFUND("refund", "Refunds & cashback", Group.INCOME),
+    INTEREST("interest", "Interest", Group.INCOME),
     MONEY_IN("money_in", "Money in", Group.INCOME);
 
     companion object {

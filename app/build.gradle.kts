@@ -17,6 +17,8 @@ android {
         targetSdk = 37
         versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: versionCodeProp
         versionName = versionNameProp
+        // Whether this build can read SMS and notifications at all. The statement-only edition (ADR-016) sets it false.
+        buildConfigField("boolean", "SMS_CAPTURE", "true")
     }
 
     // Release signing comes from environment variables (CI secrets, or ~/.credu1ar/keystore.env locally).

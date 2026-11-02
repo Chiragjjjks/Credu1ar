@@ -34,17 +34,20 @@ object Pipeline {
         when (val r = SmsParser.parse(signal)) {
             ParseResult.NotFinancial -> Outcome.Ignored
             is ParseResult.Unparsed -> Outcome.Unreadable(r.reason)
-            is ParseResult.Parsed -> {
-                var merchant = MerchantNormalizer.resolve(r.txn.payeeName, r.txn.vpa, r.txn.payeeKind)
-                val categorizer = Categorizer(rules)
-                val cat = categorizer.categorize(merchant, r.txn)
-                // No payee in the message ("Payment received on your credit card", "ATM withdrawal"): name it by what it is.
-                if (merchant.key == "unknown" && cat.category != Category.UNCATEGORISED) {
-                    merchant = merchant.copy(key = cat.category.id, name = cat.category.label)
-                }
-                Outcome.Txn(Accepted(r.txn, merchant, cat, categorizer.needsReview(cat, r.txn.direction)))
-            }
+            is ParseResult.Parsed -> Outcome.Txn(accept(r.txn, rules))
         }
+
+    /** A parsed payment from any source (SMS, notification, statement row) → merchant + category. */
+    fun accept(parsed: ParsedTxn, rules: Map<String, Category> = emptyMap()): Accepted {
+        var merchant = MerchantNormalizer.resolve(parsed.payeeName, parsed.vpa, parsed.payeeKind)
+        val categorizer = Categorizer(rules)
+        val cat = categorizer.categorize(merchant, parsed)
+        // No payee in the message ("Payment received on your credit card", "ATM withdrawal"): name it by what it is.
+        if (merchant.key == "unknown" && cat.category != Category.UNCATEGORISED) {
+            merchant = merchant.copy(key = cat.category.id, name = cat.category.label)
+        }
+        return Accepted(parsed, merchant, cat, categorizer.needsReview(cat, parsed.direction))
+    }
 
     /** Re-categorise an already stored payee after the owner teaches a rule. */
     fun recategorize(merchant: Merchant, parsed: ParsedTxn, rules: Map<String, Category>): Categorization =

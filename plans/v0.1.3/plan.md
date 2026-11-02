@@ -1,6 +1,6 @@
 # v0.1.3: upload last month's bank statement, see where it went
 
-**Status:** planned · **Updated:** 2026-11-02 · **Last release:** v0.1.2
+**Status:** building · **Updated:** 2026-11-02 · **Last release:** v0.1.2
 
 Read [AGENTS.md](../../AGENTS.md) first. This is the checklist for the statement feature; daily work goes in `plans/week-NN/day-N/planned.md`. Status words are the same as in [v0.2.0](../v0.2.0/plan.md). v0.2.0 keeps its scope (rules editor, merchant pages, budgets) and follows this release.
 
@@ -88,16 +88,54 @@ Money moves (not spending) and Money in stay separate. Statements contain rows t
   - the password if it is locked, or a copy with the lock removed;
   - if net banking also offers Excel or CSV, that file too.
 
+## Agreed after the agent discussion (2026-11-02)
+
+The owner sent their real Kotak statement and asked to "think about multiple months". Three Claude agents (designer, architect, critic) reported, then the critic ruled on their disagreements. Full reasoning: ADR-015 and ADR-016. This list **overrides** the sections above where they differ.
+
+- **Owner answers:** build the statement-only APK too ("Go ahead"); the phone runs Android 15+, so the built-in PDF text API is enough.
+- **Kotak PDF only** for v0.1.3. CSV, XLSX and other banks are deferred (fictional fixtures first, later).
+- **The button** says **"Add bank statement"**, with the line `KOTAK PDF · ANY DATE RANGE · READ ON THIS PHONE, NEVER SENT`. It names no month (Kotak runs 16th → 16th) and never says "upload".
+  - It sits as a `00 — QUICKEST START` panel at the top of Arm it, on the empty Pulse, and in System → Bank statements (list with Remove, plus "Add another statement").
+- **Pulse** gets a `BY STATEMENT · BY MONTH` toggle once a statement exists.
+  - Default: the latest fully covered month, else the statement period.
+  - A part month says which days it covers ("You spent ₹X from 16 to 30 September", "That's 15 of 30 days"). It has no ▲▼, no pace meter, and per-day uses covered days.
+  - Comparisons are only between fully covered periods.
+- **The report**, top to bottom:
+  - strip;
+  - eyebrow and switcher;
+  - two-line headline;
+  - the total;
+  - Money in · Payments · Per day;
+  - an unsorted banner when ≥ 10% isn't sorted;
+  - **Where it went**: group bars, biggest first, with **Not sorted yet** as its own amber bar;
+  - **Top places** (5);
+  - **Not spending** (one line).
+
+  There is no ring, pace meter or ticker in this view. "Led at" ignores the unsorted bar.
+- **Tapping a bar** opens a sheet with that group's payments in the period. Each payment opens the existing payment sheet to teach a category. No Ledger date filter in v0.1.3.
+- **Categoriser fixes** (fixture first):
+  - Complete truncated names from the directory's own words, for phrase aliases and keyword stems only: `BANGALORE METR` → Namma Metro, `Sri Lakshmi Stor` → store, but `MANOJ GROW` ≠ Groww.
+  - Own-name transfers (`ASHA K`, `K ASHA` vs holder "Asha K") → self transfer at 0.6, so they go to review; the holder's name is never stored.
+  - `CHRG` → Bank charges & fees; `Int.Pd` → Interest; cashback → Refunds; `NEFT IN` from a company → Money in.
+- **Data:** schema v2, `statement` table, `stmt_key` unique, `time_known`.
+  - A re-imported file adds 0; overlapping statements add only new rows.
+  - SMS ↔ statement matching works in both directions. An upgraded row takes the SMS time and SMS id, so a re-scan doesn't duplicate it.
+- **Privacy:**
+  - Holder name, address and full account number are never stored (the interest narration is masked to `XX` + last 4).
+  - No file name or URI is kept, and the password is never saved.
+  - "Couldn't read" stores one record per import, not text.
+
 ## Work in order
+
+Builders are Claude agents in separate git worktrees, each owning distinct files, merged in the order A → B → C.
 
 | ID | Status | Task / done when | Evidence or blocker |
 |---|---|---|---|
-| 1 | TODO | Critic + formats agents (Claude): edge cases, and fictional layouts and narrations for SBI, HDFC, ICICI, Axis and Kotak. | Agent reports summarised in the day journal. |
-| 2 | TODO | `:core` table, amounts, dates and balance check, with fixtures for each layout. | `./gradlew :core:test` green. |
-| 3 | TODO | `:core` narration → categoriser, with fixtures: UPI, POS, ATM, NEFT/IMPS, ACH EMI/SIP, card bill, salary, interest, charges, refunds and reversals. | Tests green; no existing test weakened. |
-| 4 | TODO | `:app` picker, readers (CSV, HTML-XLS, XLSX, PDF), password, progress; DB v2 migration; matching with SMS; re-import adds nothing. | Migration test from a v1 database; import twice → same row count. |
-| 5 | TODO | UI: the upload button (Arm it, empty Pulse, System) and the report layout for a finished month (ranked group bars, top places, not spending, tap-through). | Emulator screenshots checked by eye. |
-| 6 | BLOCKED | Owner's bank format: fictional copy of its layout as a fixture; the real file gives the same totals as the bank's own summary. | Owner: send the statement (see above). |
-| 7 | TODO | Verify: core tests, lint, smoke, emulator with fictional PDF and CSV, independent Claude review. | Commands and screenshots in the journal. |
-| 8 | TODO | Release v0.1.3 under the standing approval, once the exact-commit CI is green. | Release page and checksum checked. |
-| 9 | ASK | **Statement-only edition:** a second APK that never asks for SMS or notification access, so Play Protect's SMS block does not apply and it installs from the browser like any app. It is a separate build that simply cannot read SMS, not a way around the check. | Owner decides. Recommended: yes. |
+| 0 | DONE | Shared foundation: Kotak page-text parser + completeness checks, statement types, `StatementTxns` keys, `Reports` (coverage, report), `Source.STATEMENT`, new categories, `Pipeline.accept`, app stubs (`StatementImport`, Repo statement methods), `BuildConfig.SMS_CAPTURE`. | 46 core tests green (11 new on fictional fixtures); app builds. Real statement: 202/202 rows, 0 balance mismatches (prototype, no data copied). |
+| 1 | DONE | Agent discussion: designer, architect, critic, then a critic ruling. | Summarised above; ADR-015/016. |
+| 2 | TODO | **Agent A (`:core`):** categoriser and merchant fixes, own-name, `StatementMatch`, refine `Reports`, rhythm skips `timeKnown=false`. | Core tests; no existing test weakened. |
+| 3 | TODO | **Agent B (data, ingest, build):** DB v2 migration, Repo import/merge/dedup/coverage/delete, `PdfText` + `StatementImport`, flavors `full`/`statement`, CI publishes both APKs, debug import hook, smoke test still passes. | Migration keeps v1 data; same file twice → +0 rows; overlap → 41 rows. |
+| 4 | TODO | **Agent C (UI):** the button, picker, password sheet, progress/result copy, Pulse toggle + report + Not sorted bar + bar sheet, System → Bank statements, statement edition hides SMS steps. | Emulator screenshots checked by eye. |
+| 5 | TODO | Merge, then end-to-end on the emulator with the fictional fixture PDFs, and privately with the owner's real file (totals match the bank's summary). | Journal; no personal data written down. |
+| 6 | TODO | Independent Claude review; fix findings. | Review summary in the journal. |
+| 7 | TODO | Release v0.1.3 (both APKs) under the standing approval once the exact-commit CI is green. | Release page and checksums checked. |

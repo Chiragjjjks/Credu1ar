@@ -6,7 +6,7 @@ enum class Instrument { UPI, CARD, ACCOUNT, ATM, TRANSFER, NETBANKING, WALLET, U
 
 /** Where a signal came from. Stored so the pipeline can prefer SMS (full body) over notifications. */
 enum class Source(val id: String) {
-    SMS("sms"), NOTIFICATION("notif"), SAMPLE("sample");
+    SMS("sms"), NOTIFICATION("notif"), STATEMENT("stmt"), SAMPLE("sample");
 
     companion object { fun byId(id: String): Source = entries.firstOrNull { it.id == id } ?: SMS }
 }
@@ -42,6 +42,8 @@ data class ParsedTxn(
     /** Short lowercase hints the categoriser may use, e.g. "salary", "refund", "credit card", "emi". */
     val hints: Set<String>,
     val confidence: Float,
+    /** The payee name was cut short by the source (bank statements print ~14-18 characters), so its last word may be partial. */
+    val payeeTruncated: Boolean = false,
 )
 
 sealed interface ParseResult {
@@ -68,6 +70,9 @@ data class Txn(
     val bank: String?,
     val accountTail: String?,
     val needsReview: Boolean,
+    val source: Source = Source.SMS,
+    /** False for rows that only carry a date (bank statements): no hour to show, left out of time-of-day charts. */
+    val timeKnown: Boolean = true,
 ) {
     /** Counts toward "spent": a debit in a spending category. */
     val isSpend: Boolean get() = direction == Direction.DEBIT && category.group.isSpend
