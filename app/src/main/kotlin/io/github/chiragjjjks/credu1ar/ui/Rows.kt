@@ -196,14 +196,14 @@ object Fmt {
  */
 @Composable
 fun reportHeadline(r: Reports.Report): Pair<String, String?> {
-    val line1 = Fmt.spentLine(r, rupees(r.spentPaise))
+    val line1 = Fmt.spentLine(r, rupeesWhole(r.spentPaise))
     val c = r.coverage
     val lead = r.byGroup.firstOrNull()
     val line2 = when {
         r.isCalendarMonth && c?.partial == true -> "That's ${c.coveredDays} of ${c.totalDays} days."
-        r.spentPaise == 0L -> if (r.incomePaise > 0) "${rupees(r.incomePaise)} came in." else null
+        r.spentPaise == 0L -> if (r.incomePaise > 0) "${rupeesWhole(r.incomePaise)} came in." else null
         lead == null -> "None of it is sorted yet."
-        else -> "${lead.group.label} led at ${rupees(lead.paise)}."
+        else -> "${lead.group.label} led at ${rupeesWhole(lead.paise)}."
     }
     return line1 to line2
 }

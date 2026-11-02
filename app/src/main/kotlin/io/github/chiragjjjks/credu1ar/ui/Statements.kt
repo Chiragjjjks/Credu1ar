@@ -126,8 +126,9 @@ fun payeesToLook(s: AppModel.UiState, from: LocalDate?, to: LocalDate?): Int {
 fun ImportSheet(s: AppModel.UiState, import: AppModel.Import, model: AppModel, onSeeIt: () -> Unit, onSort: () -> Unit, onPickAgain: () -> Unit) {
     val shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
     Column(
-        Modifier.fillMaxWidth().heightIn(max = 640.dp).clip(shape).background(C.Panel).border(1.dp, C.LineHot, shape)
-            .navigationBarsPadding().imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 14.dp),
+        // imePadding outside the sheet: the whole sheet rides above the keyboard, so Open stays visible.
+        Modifier.imePadding().fillMaxWidth().heightIn(max = 640.dp).clip(shape).background(C.Panel).border(1.dp, C.LineHot, shape)
+            .navigationBarsPadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Box(Modifier.align(Alignment.CenterHorizontally).size(width = 40.dp, height = 4.dp).background(C.LineHot, CircleShape))
@@ -144,7 +145,7 @@ fun ImportSheet(s: AppModel.UiState, import: AppModel.Import, model: AppModel, o
 @Composable
 private fun Reading(i: AppModel.Import.Reading) {
     val p = i.progress
-    Eyebrow("Bank statement", "00", live = true)
+    Eyebrow("Bank statement", "00")
     Headline("Reading your", "statement.")
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         val f by animateFloatAsState(if (p != null && p.pages > 0) p.page.toFloat() / p.pages else 0.06f, tween(400, easing = Ease.Out), label = "pages")
@@ -169,7 +170,7 @@ private fun Locked(i: AppModel.Import.Locked, model: AppModel) {
     fun submit() { if (pw.isNotEmpty()) { val p = pw; pw = ""; model.unlockStatement(p) } }
 
     Eyebrow("Bank statement", "00", trailing = { if (i.files > 1) Txt("FILE ${i.fileIndex + 1} OF ${i.files}", T.Eyebrow) })
-    Headline("This statement", "is locked.")
+    Headline("This statement is locked.")
     val shape = RoundedCornerShape(12.dp)
     BasicTextField(
         value = pw, onValueChange = { pw = it }, singleLine = true,

@@ -111,16 +111,20 @@ private fun ReportStrip(s: AppModel.UiState) {
     val complete = sts.all { it.complete }
     val accounts = sts.map { Fmt.account(it.bank, it.accountTail) }.distinct()
     val text = buildString {
-        append(if (sts.size == 1) "FROM STATEMENT" else "FROM ${sts.size} STATEMENTS")
+        append(if (sts.size == 1) "FROM STATEMENT" else "${sts.size} STATEMENTS")
         append(" · ").append(accounts.first()); if (accounts.size > 1) append(" +${accounts.size - 1}")
         val rows = sts.sumOf { it.rows }
         append(" · $rows ${if (rows == 1) "ROW" else "ROWS"}")
-        append(if (complete) " ✓" else " · NOT ALL ADDED UP")
+        if (complete) append(" ✓")
     }
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        LiveDot(if (complete) C.MoneyIn else C.Attention, pulse = false)
-        Spacer(Modifier.width(8.dp))
-        Txt(text, T.Eyebrow.copy(color = C.Ink), maxLines = 1)
+    Column {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            LiveDot(if (complete) C.MoneyIn else C.Attention, pulse = false)
+            Spacer(Modifier.width(8.dp))
+            Txt(text, T.Eyebrow.copy(color = C.Ink), maxLines = 2)
+        }
+        // Said in words, not just the amber dot: some rows didn't add up to the closing balance.
+        if (!complete) Txt("NOT EVERY ROW ADDED UP · SEE SYSTEM", T.Eyebrow.copy(color = C.Attention), Modifier.padding(start = 15.dp, top = 4.dp), maxLines = 2)
     }
 }
 
@@ -153,7 +157,7 @@ fun ReportPulse(s: AppModel.UiState, r: Reports.Report, model: AppModel, nav: Na
         item {
             Spacer(Modifier.height(20.dp))
             val shown by animateFloatAsState(r.spentPaise.toFloat(), tween(900, easing = Ease.Out), label = "hero")
-            Txt(rupees(shown.toLong()), T.Display, maxLines = 1)
+            Txt(rupeesWhole(shown.toLong()), T.Display, maxLines = 1)
             Spacer(Modifier.height(4.dp))
             Txt(Fmt.spentCaption(r), T.Eyebrow)
             val pct = r.changePct
@@ -166,9 +170,9 @@ fun ReportPulse(s: AppModel.UiState, r: Reports.Report, model: AppModel, nav: Na
             Spacer(Modifier.height(18.dp))
             Panel {
                 Row(Modifier.fillMaxWidth()) {
-                    StatCell("Money in", if (r.incomePaise > 0) "+${rupees(r.incomePaise)}" else rupees(0), Modifier.weight(1.15f), if (r.incomePaise > 0) C.MoneyIn else C.Ink)
+                    StatCell("Money in", if (r.incomePaise > 0) "+${rupeesWhole(r.incomePaise)}" else rupeesWhole(0), Modifier.weight(1.15f), if (r.incomePaise > 0) C.MoneyIn else C.Ink)
                     StatCell("Payments", r.spendCount.toString(), Modifier.weight(0.8f))
-                    StatCell("Per day", rupees(r.perDayPaise), Modifier.weight(1f))
+                    StatCell("Per day", rupeesWhole(r.perDayPaise), Modifier.weight(1f))
                 }
             }
         }
@@ -182,7 +186,7 @@ fun ReportPulse(s: AppModel.UiState, r: Reports.Report, model: AppModel, nav: Na
                     LiveDot(C.Attention)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Txt("${rupees(r.unsortedPaise)} ($unsortedShare%) isn't sorted yet", T.Body)
+                        Txt("${rupeesWhole(r.unsortedPaise)} ($unsortedShare%) isn't sorted yet", T.Body)
                         Txt("${Fmt.plural(r.unsortedPayees, "payee")} · Sort them →", T.Small)
                     }
                 }
@@ -196,13 +200,13 @@ fun ReportPulse(s: AppModel.UiState, r: Reports.Report, model: AppModel, nav: Na
                         val max = maxOf(r.byGroup.firstOrNull()?.paise ?: 0L, r.unsortedPaise).coerceAtLeast(1).toFloat()
                         r.byGroup.forEach { g ->
                             RankedBar(
-                                g.group.label, rupees(g.paise), g.paise / max, C.of(g.group),
+                                g.group.label, rupeesWhole(g.paise), g.paise / max, C.of(g.group),
                                 caption = "${Fmt.share(g.paise, r.spentPaise)} OF SPEND", captionEnd = Fmt.plural(g.count, "PAYMENT", "PAYMENTS"),
                                 onClick = { nav.openPayments(PaymentsKey.group(g.group)) },
                             )
                         }
                         if (r.unsortedPaise > 0) UnsortedBar(
-                            "Not sorted yet", rupees(r.unsortedPaise), r.unsortedPaise / max,
+                            "Not sorted yet", rupeesWhole(r.unsortedPaise), r.unsortedPaise / max,
                             caption = "${Fmt.share(r.unsortedPaise, r.spentPaise)} OF SPEND", captionEnd = Fmt.plural(r.unsortedPayees, "PAYEE", "PAYEES"),
                             onClick = { nav.openPayments(PaymentsKey.UNSORTED) },
                         )
@@ -230,10 +234,10 @@ fun ReportPulse(s: AppModel.UiState, r: Reports.Report, model: AppModel, nav: Na
                 Panel {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(verticalAlignment = Alignment.Bottom) {
-                            Txt(rupees(r.moves.sumOf { it.paise }), T.Amount, maxLines = 1)
+                            Txt(rupeesWhole(r.moves.sumOf { it.paise }), T.Amount, maxLines = 1)
                             Txt("  moved, not counted above", T.Small, maxLines = 1)
                         }
-                        val parts = r.moves.map { "${Fmt.moveLabel(it.category)} ${rupees(it.paise)}" }
+                        val parts = r.moves.map { "${Fmt.moveLabel(it.category)} ${rupeesWhole(it.paise)}" }
                         Txt(parts.joinToString(" · "), T.Small)
                     }
                 }
@@ -300,7 +304,7 @@ private fun PlaceRow(m: Insights.MerchantTotal, unsorted: Boolean, onClick: () -
             Txt("${if (unsorted) "Not sorted yet" else m.category.label} · ${m.count}×", T.Small, maxLines = 1)
         }
         Spacer(Modifier.width(10.dp))
-        Txt(rupees(m.paise), T.Amount, maxLines = 1)
+        Txt(rupeesWhole(m.paise), T.Amount, maxLines = 1)
     }
 }
 
@@ -322,7 +326,7 @@ fun PaymentsSheet(p: PaymentsKey.Selection, now: Long, nav: Nav, onClose: () -> 
             Spacer(Modifier.width(10.dp))
             Txt(p.title, T.Title, Modifier.weight(1f), maxLines = 1)
             Spacer(Modifier.width(10.dp))
-            Txt(rupees(p.totalPaise), T.AmountBig, maxLines = 1)
+            Txt(rupeesWhole(p.totalPaise), T.AmountBig, maxLines = 1)
         }
         Spacer(Modifier.height(4.dp))
         Txt("${Fmt.plural(p.txns.size, "payment")} · ${Fmt.period(p.from, p.to)}".uppercase(), T.Eyebrow)

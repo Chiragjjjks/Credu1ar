@@ -50,7 +50,7 @@ fun ReviewScreen(s: AppModel.UiState, model: AppModel, nav: Nav, onBack: () -> U
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(Modifier.size(8.dp).background(C.of(Group.PEOPLE_CASH), CircleShape)); Spacer(Modifier.width(10.dp))
                             Txt("${people.size} payees look like people", T.Title, Modifier.weight(1f), maxLines = 1)
-                            Txt(rupees(people.sumOf { it.totalPaise }), T.Amount, maxLines = 1)
+                            Txt(rupeesWhole(people.sumOf { it.totalPaise }), T.Amount, maxLines = 1)
                         }
                         val names = people.take(3).joinToString(", ") { it.name } + if (people.size > 3) " and ${people.size - 3} more" else ""
                         Txt("$names. Filed under People & Cash › Sent to people. You can still change any one later.", T.Small)

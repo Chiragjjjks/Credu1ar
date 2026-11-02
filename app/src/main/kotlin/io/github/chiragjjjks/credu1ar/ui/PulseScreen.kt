@@ -241,10 +241,9 @@ private fun EmptyPulse(s: AppModel.UiState, nav: Nav) {
                 PillButton("Add bank statement", primary = true, modifier = Modifier.fillMaxWidth(), onClick = nav.addStatement)
                 Txt(STATEMENT_FINE_LINE, T.Eyebrow.copy(lineHeight = T.Eyebrow.fontSize * 1.6f))
                 Spacer(Modifier.height(2.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (BuildConfig.SMS_CAPTURE) PillButton("Arm it", modifier = Modifier.weight(1f), onClick = nav.arm)
-                    PillButton("Try with sample data", modifier = Modifier.weight(1f), onClick = nav.loadSample)
-                }
+                // Stacked, not side by side: "Try with sample data" truncates in half a row.
+                if (BuildConfig.SMS_CAPTURE) PillButton("Arm it", modifier = Modifier.fillMaxWidth(), onClick = nav.arm)
+                PillButton("Try with sample data", modifier = Modifier.fillMaxWidth(), onClick = nav.loadSample)
             }
         }
     }
