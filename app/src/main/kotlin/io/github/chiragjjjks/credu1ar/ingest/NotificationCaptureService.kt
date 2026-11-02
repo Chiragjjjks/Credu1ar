@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.pm.PackageManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import io.github.chiragjjjks.credu1ar.BuildConfig
 import io.github.chiragjjjks.credu1ar.Graph
 import io.github.chiragjjjks.credu1ar.core.model.RawSignal
 import io.github.chiragjjjks.credu1ar.core.model.Source
@@ -28,6 +29,7 @@ class NotificationCaptureService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        if (!BuildConfig.SMS_CAPTURE) return // never bound in the statement edition (not in its manifest); belt and braces
         val pkg = sbn.packageName ?: return
         if (pkg == packageName || !Allowlist.accepts(pkg)) return
         val n = sbn.notification ?: return

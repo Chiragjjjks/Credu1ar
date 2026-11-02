@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.Telephony
+import io.github.chiragjjjks.credu1ar.BuildConfig
 import io.github.chiragjjjks.credu1ar.Graph
 import io.github.chiragjjjks.credu1ar.core.HistoryWindow
 import io.github.chiragjjjks.credu1ar.core.ImportWindow
@@ -31,8 +32,9 @@ object CatchUp {
     /** [window] is set only for the first-link read. */
     data class Result(val read: Int, val fromMillis: Long, val window: ImportWindow?)
 
+    /** Always false in the statement edition (ADR-016): it declares no SMS permission, so every read below is a no-op. */
     fun hasPermission(context: Context): Boolean =
-        context.checkSelfPermission(Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
+        BuildConfig.SMS_CAPTURE && context.checkSelfPermission(Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
 
     /** True until SMS history has been read once. Installs from before v0.1.2 already have a `last_scan_date`. */
     fun needsFirstLink(context: Context): Boolean {
