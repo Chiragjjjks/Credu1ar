@@ -72,6 +72,20 @@ object Fmt {
         }
     }
 
+    /**
+     * Under a row's amount: the time, or the day and time. Statement rows carry no time (`timeKnown == false`), so
+     * they show the date only, never a made-up "12:00".
+     */
+    fun rowWhen(t: Txn, now: Long, showDay: Boolean): String = when {
+        !t.timeKnown -> dayShort(t.occurredAtMillis, now)
+        showDay -> "${dayShort(t.occurredAtMillis, now)} ${time(t.occurredAtMillis)}"
+        else -> time(t.occurredAtMillis)
+    }
+
+    /** The payment sheet's date line: "Wed, 16 Sep · 14:05", or the date alone for statement rows. */
+    fun sheetWhen(t: Txn, now: Long): String =
+        if (t.timeKnown) "${dayLabel(t.occurredAtMillis, now)} · ${time(t.occurredAtMillis)}" else dayLabel(t.occurredAtMillis, now)
+
     fun cadence(days: Int) = when (days) { 7 -> "weekly"; 30 -> "monthly"; 91 -> "quarterly"; else -> "yearly" }
 }
 
@@ -103,7 +117,7 @@ fun TxnRow(t: Txn, now: Long, showDay: Boolean = false, onClick: () -> Unit) {
         Spacer(Modifier.width(10.dp))
         Column(horizontalAlignment = Alignment.End) {
             Txt(signed(t), T.Amount, color = if (t.direction == Direction.CREDIT && t.isIncome) C.MoneyIn else if (!t.isSpend && t.direction == Direction.DEBIT) C.Mid else C.Ink, maxLines = 1)
-            Txt(if (showDay) "${Fmt.dayShort(t.occurredAtMillis, now)} ${Fmt.time(t.occurredAtMillis)}" else Fmt.time(t.occurredAtMillis), T.MonoSmall, maxLines = 1)
+            Txt(Fmt.rowWhen(t, now, showDay), T.MonoSmall, maxLines = 1)
         }
     }
 }

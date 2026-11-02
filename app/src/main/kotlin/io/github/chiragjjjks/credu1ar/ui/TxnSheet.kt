@@ -56,7 +56,7 @@ fun TxnSheet(t: Txn, model: AppModel, now: Long, onClose: () -> Unit) {
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Txt(t.merchantName, T.Title, maxLines = 2)
-                Txt("${Fmt.dayLabel(t.occurredAtMillis, now)} · ${Fmt.time(t.occurredAtMillis)}", T.Small)
+                Txt(Fmt.sheetWhen(t, now), T.Small)
             }
             Txt(signed(t), T.AmountBig, color = if (t.isIncome) C.MoneyIn else C.Ink, maxLines = 1)
         }
@@ -89,7 +89,7 @@ fun TxnSheet(t: Txn, model: AppModel, now: Long, onClose: () -> Unit) {
         Eyebrow("What was read", "02")
         val d = detail
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Fact("Source", when (d?.source) { Source.SMS -> "SMS"; Source.NOTIFICATION -> "Notification"; Source.STATEMENT -> "Bank statement"; Source.SAMPLE -> "Sample data"; null -> "…" })
+            Fact("Source", when (d?.source ?: t.source) { Source.SMS -> "SMS"; Source.NOTIFICATION -> "Notification"; Source.STATEMENT -> "Bank statement"; Source.SAMPLE -> "Sample data" })
             Fact("Instrument", t.instrument.name.lowercase().replaceFirstChar { it.uppercase() })
             Fact("Bank", t.bank ?: "—")
             Fact("Account / card", t.accountTail?.let { "••$it" } ?: "—")
@@ -100,7 +100,10 @@ fun TxnSheet(t: Txn, model: AppModel, now: Long, onClose: () -> Unit) {
         if (d?.raw != null) {
             PillButton(if (showRaw) "Hide original message" else "Show original message") { showRaw = !showRaw }
             if (showRaw) Panel(padding = androidx.compose.foundation.layout.PaddingValues(12.dp)) { Txt(d.raw, T.MonoSmall) }
-        } else if (d != null) Txt("Original text was not kept (see System → Privacy).", T.Small)
+        } else if (d != null) Txt(
+            if (d.source == Source.STATEMENT) "Read from a bank statement. The file itself was not kept." else "Original text was not kept (see System → Privacy).",
+            T.Small,
+        )
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             PillButton("Done", primary = true, modifier = Modifier.weight(1f), onClick = onClose)
